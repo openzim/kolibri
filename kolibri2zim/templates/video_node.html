@@ -1,0 +1,28 @@
+{% extends "statiksite/content_node.html" %}
+
+{% block contentnode %}
+<p>
+    <video width="640" height="480" controls>
+        <source src="{{ main_path }}" type="video/mp4">
+        {% for lang, sub_path in subtitles_path_tuples %}
+            {% if forloop.first %}
+                <track label="{{ lang }}" kind="subtitles" srclang="{{ lang }}" src="{{ sub_path }}" default>
+            {% else %}
+                <track label="{{ lang }}" kind="subtitles" srclang="{{ lang }}" src="{{ sub_path }}">
+            {% endif %}
+        {% endfor %}
+        Your browser does not support the video tag.
+    </video>
+</p>
+
+<!-- invisible div to make sure subs get downloaded by wget -->
+<div style="display: none;">
+    {% for lang, sub_path in subtitles_path_tuples %}
+        <img src="{{ sub_path }}" />
+    {% endfor %}
+</div>
+
+
+{% endblock %}
+
+

@@ -1,0 +1,40 @@
+{% extends "statiksite/base.html" %}
+
+{% block maincontent %}
+
+<div class="container">
+
+    <div id="maindiv">
+
+      <div class="maincontent {{ node.kind }}-kind">
+
+          <h3>{{ node.title }}</h3>
+          <p class="descr">
+              {{ node.description }}
+          </p>
+
+          {% block contentnode %}
+
+          <!-- the specific ContentNode subclass will replace this block -->
+
+          {% endblock %}
+
+          <h5>Content metadata</h5>
+          <ul class="metadata">
+              <li class="content_id"><span class="keyname">content id:</span> <span class="keyvalue">{{ node.content_id }}</span></li>
+              <li class="author"><span class="keyname">author:</span> <span class="keyvalue">{{ node.author }}</span></li>
+              <li class="lang_id"><span class="keyname">lang:</span> <span class="keyvalue">{{ node.lang_id }}</span></li>
+              <li class="license"><span class="keyname">license:</span> <span class="keyvalue">{{ node.license.license_name }}</span></li>
+              <li class="copyright_holder"><span class="keyname">copyright holder:</span> <span class="keyvalue">{{ node.license_owner }}</span></li>
+              {% ifequal node.license.license_name 'Special Permissions' %}
+              <li class="license_description"><span class="keyname">license description:</span> <span class="keyvalue">{{ node.license.license_description }}</span></li>
+              {% endifequal %}
+          </ul>
+
+      </div>
+
+
+    </div>
+
+</div><!-- /.container -->
+{% endblock %}
