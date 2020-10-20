@@ -1,0 +1,50 @@
+#main-container {
+    max-width: 1000px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+#grid-container {
+    display: grid;
+    grid-gap: 20px;
+    grid-template-columns: auto auto auto auto;
+    justify-content: space-between;
+    margin-top: 100px;
+}
+
+.child-node {
+    width: 240px;
+    height: auto;
+}
+
+#node-heading {
+    font-size: 70px;
+    font-family: 'Roboto Mono', monospace;
+    margin-top: 50px;
+}
+
+#node-description {
+    max-width: 700px;
+    font-family: 'Roboto Mono', monospace;
+}
+
+#up-a-level {
+    position: fixed;
+    bottom: 50px;
+    right: 50px;
+}
+
+.card-title {
+    font-family: 'Roboto Mono', monospace;
+    padding: 10px;
+    font-size: 24px;
+}
+
+.card-chips {
+    padding: 10px;
+    padding-top: 0;
+}
+
+.card-chip {
+    margin: 5px;
+}
