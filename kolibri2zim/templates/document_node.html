@@ -1,0 +1,8 @@
+
+{% extends "content_node_base.html" %}
+
+{% block content %}
+<div class="video-wrapper" style="width: 100%;">
+  <iframe id="pdf-js-viewer" src="{{ path_to_root }}assets/pdfjs/web/viewer.html?file=%2{{ pdf_name }}.pdf" title="webviewer" frameborder="0" width="500" height="600"></iframe>
+</div>
+{% endblock %}

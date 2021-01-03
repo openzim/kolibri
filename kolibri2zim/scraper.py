@@ -3,14 +3,14 @@
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 
+import io
 import json
 import pathlib
 import tempfile
 import zipfile
-import shutil
 
 import jinja2
-from zimscraperlib.download import save_large_file
+from zimscraperlib.download import stream_file
 from zimscraperlib.zim import Creator
 
 from .constants import ROOT_DIR, getLogger
@@ -85,6 +85,11 @@ class Kolibri2Zim:
                     self.creator.add_css(
                         url=f"{curr_path}{content.name}", fpath=content
                     )
+                elif content.suffix == ".js":
+                    print(f"Adding JS file {curr_path}{content.name}")
+                    self.creator.add_binary(
+                        url=f"{curr_path}{content.name}", fpath=content, mime_type="text/javascript"
+                    )
                 else:
                     self.creator.add_binary(
                         url=f"{curr_path}{content.name}", fpath=content
@@ -96,35 +101,28 @@ class Kolibri2Zim:
         if not json_dict.get("files"):
             logger.debug(f"Node {json_dict['id']} does not have any associated files")
             return
-        print(json_dict.get("files"))
         for file_node in json_dict.get("files"):
             file_asset_name = f"{file_node['local_file_id']}.{file_node['extension']}"
-            download_path = pathlib.Path(tempfile.mkdtemp(dir=self.build_dir)).joinpath(
-                file_asset_name
+            file_stream = io.BytesIO()
+            stream_file(
+                url=f"http://studio.learningequality.org/content/storage/{file_asset_name[0]}/{file_asset_name[1]}/{file_asset_name}",
+                byte_stream=file_stream,
             )
-            save_large_file(
-                f"http://studio.learningequality.org/content/storage/{file_asset_name[0]}/{file_asset_name[1]}/{file_asset_name}",
-                download_path,
-            )
-            print("HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH")
             if file_node["extension"] in ["zip", "h5p"]:
-                with zipfile.ZipFile(download_path, "r") as zipfl:
-                    zipfl.extractall(download_path.parent.joinpath("zip_content"))
-                print("BEFORE")
-                self.add_files_recursively(
-                    f"{curr_path}zip_content/",
-                    download_path.parent.joinpath("zip_content"),
-                )
-                print("AFTER")
+                # with zipfile.ZipFile(download_path, "r") as zipfl:
+                #     zipfl.extractall(download_path.parent.joinpath("zip_content"))
+                compressed_archive = zipfile.ZipFile(file_stream)
+                for name in compressed_archive.namelist():
+                    print(f"{name}")
+                    compressed_file = compressed_archive.open(name).read()
+                    self.creator.add_binary(url=f"{curr_path}zip_content/{name}", content=compressed_file)
             else:
-                print("BEFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF")
                 try:
                     self.creator.add_binary(
-                        url=f"{curr_path}{download_path.name}", fpath=download_path
+                        url=f"{curr_path}{file_asset_name}", content=file_stream.getvalue(),
                     )
                 except Exception as exc:
-                    print(exc)
-                    print("AFTERRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR")
+                    raise exc
 
             # download_path.parent.rmdir()
 
@@ -165,6 +163,15 @@ class Kolibri2Zim:
 
     def add_document_node_to_zim(self, json_dict, curr_path, path_to_root):
         self.add_node_files_to_zim(json_dict, curr_path)
+        pdf_name = None
+        for file_node in json_dict.get("files"):
+            if file_node["preset"] == "document" and file_node["extension"] == "pdf":
+                pdf_name = f"{file_node['local_file_id']}.{file_node['extension']}"
+        return self.jinja2_env.get_template("document_node.html").render(
+            node=json_dict,
+            pdf_name=pdf_name,
+            path_to_root=path_to_root,
+        )
 
     def add_h5p_node_to_zim(self, json_dict, curr_path, path_to_root):
         self.add_node_files_to_zim(json_dict, curr_path)
