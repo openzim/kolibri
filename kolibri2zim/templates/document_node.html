@@ -2,7 +2,12 @@
 {% extends "content_node_base.html" %}
 
 {% block content %}
-<div class="video-wrapper" style="width: 100%;">
-  <iframe id="pdf-js-viewer" src="{{ path_to_root }}assets/pdfjs/web/viewer.html?file=%2{{ pdf_name }}.pdf" title="webviewer" frameborder="0" width="500" height="600"></iframe>
-</div>
+<a href={{ file_name }} target="_blank"><button class="mdc-button">
+  <div class="mdc-button__ripple"></div>
+  <i class="material-icons mdc-button__icon" aria-hidden="true"
+    >bookmark</i
+  >
+  <span class="mdc-button__label">Open or Download</span>
+</button>
+</a>
 {% endblock %}
