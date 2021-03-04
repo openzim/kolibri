@@ -1,0 +1,87 @@
+/* roboto-mono-100 - vietnamese_latin-ext_latin_greek_cyrillic-ext_cyrillic */
+@font-face {
+    font-family: 'Roboto Mono';
+    font-style: normal;
+    font-weight: 100;
+    src: local(''),
+         url('roboto-mono/roboto-mono-v12-vietnamese_latin-ext_latin_greek_cyrillic-ext_cyrillic-100.woff2') format('woff2'), /* Chrome 26+, Opera 23+, Firefox 39+ */
+         url('roboto-mono/roboto-mono-v12-vietnamese_latin-ext_latin_greek_cyrillic-ext_cyrillic-100.woff') format('woff'); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+  }
+  /* roboto-mono-200 - vietnamese_latin-ext_latin_greek_cyrillic-ext_cyrillic */
+  @font-face {
+    font-family: 'Roboto Mono';
+    font-style: normal;
+    font-weight: 200;
+    src: local(''),
+         url('roboto-mono/roboto-mono-v12-vietnamese_latin-ext_latin_greek_cyrillic-ext_cyrillic-200.woff2') format('woff2'), /* Chrome 26+, Opera 23+, Firefox 39+ */
+         url('roboto-mono/roboto-mono-v12-vietnamese_latin-ext_latin_greek_cyrillic-ext_cyrillic-200.woff') format('woff'); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+  }
+  /* roboto-mono-300 - vietnamese_latin-ext_latin_greek_cyrillic-ext_cyrillic */
+  @font-face {
+    font-family: 'Roboto Mono';
+    font-style: normal;
+    font-weight: 300;
+    src: local(''),
+         url('roboto-mono/roboto-mono-v12-vietnamese_latin-ext_latin_greek_cyrillic-ext_cyrillic-300.woff2') format('woff2'), /* Chrome 26+, Opera 23+, Firefox 39+ */
+         url('roboto-mono/roboto-mono-v12-vietnamese_latin-ext_latin_greek_cyrillic-ext_cyrillic-300.woff') format('woff'); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+  }
+  /* roboto-mono-regular - vietnamese_latin-ext_latin_greek_cyrillic-ext_cyrillic */
+  @font-face {
+    font-family: 'Roboto Mono';
+    font-style: normal;
+    font-weight: 400;
+    src: local(''),
+         url('roboto-mono/roboto-mono-v12-vietnamese_latin-ext_latin_greek_cyrillic-ext_cyrillic-regular.woff2') format('woff2'), /* Chrome 26+, Opera 23+, Firefox 39+ */
+         url('roboto-mono/roboto-mono-v12-vietnamese_latin-ext_latin_greek_cyrillic-ext_cyrillic-regular.woff') format('woff'); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+  }
+  /* roboto-mono-500 - vietnamese_latin-ext_latin_greek_cyrillic-ext_cyrillic */
+  @font-face {
+    font-family: 'Roboto Mono';
+    font-style: normal;
+    font-weight: 500;
+    src: local(''),
+         url('roboto-mono/roboto-mono-v12-vietnamese_latin-ext_latin_greek_cyrillic-ext_cyrillic-500.woff2') format('woff2'), /* Chrome 26+, Opera 23+, Firefox 39+ */
+         url('roboto-mono/roboto-mono-v12-vietnamese_latin-ext_latin_greek_cyrillic-ext_cyrillic-500.woff') format('woff'); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+  }
+  /* roboto-mono-600 - vietnamese_latin-ext_latin_greek_cyrillic-ext_cyrillic */
+  @font-face {
+    font-family: 'Roboto Mono';
+    font-style: normal;
+    font-weight: 600;
+    src: local(''),
+         url('roboto-mono/roboto-mono-v12-vietnamese_latin-ext_latin_greek_cyrillic-ext_cyrillic-600.woff2') format('woff2'), /* Chrome 26+, Opera 23+, Firefox 39+ */
+         url('roboto-mono/roboto-mono-v12-vietnamese_latin-ext_latin_greek_cyrillic-ext_cyrillic-600.woff') format('woff'); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+  }
+  /* roboto-mono-700 - vietnamese_latin-ext_latin_greek_cyrillic-ext_cyrillic */
+  @font-face {
+    font-family: 'Roboto Mono';
+    font-style: normal;
+    font-weight: 700;
+    src: local(''),
+         url('roboto-mono/roboto-mono-v12-vietnamese_latin-ext_latin_greek_cyrillic-ext_cyrillic-700.woff2') format('woff2'), /* Chrome 26+, Opera 23+, Firefox 39+ */
+         url('roboto-mono/roboto-mono-v12-vietnamese_latin-ext_latin_greek_cyrillic-ext_cyrillic-700.woff') format('woff'); /* Chrome 6+, Firefox 3.6+, IE 9+, Safari 5.1+ */
+  }
+
+  /* fallback */
+@font-face {
+    font-family: 'Material Icons';
+    font-style: normal;
+    font-weight: 400;
+    src: url('material-icons.woff2') format('woff2');
+  }
+  
+  .material-icons {
+    font-family: 'Material Icons';
+    font-weight: normal;
+    font-style: normal;
+    font-size: 24px;
+    line-height: 1;
+    letter-spacing: normal;
+    text-transform: none;
+    display: inline-block;
+    white-space: nowrap;
+    word-wrap: normal;
+    direction: ltr;
+    -webkit-font-feature-settings: 'liga';
+    -webkit-font-smoothing: antialiased;
+  }
