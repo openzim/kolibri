@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>{{ title }}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"> 
+  <meta name="description" content="{{ description }}">
+  <meta name="author" content="{% if author %}{{ author }}{% else %}Learning Equality{% endif %}">
+  <link href="./assets/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <style type="text/css">
+    .card-img { height: 10em; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    {% if parents_count %}
+    <nav style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
+      <ol class="breadcrumb">
+        {% for parent in parents %}
+        <li class="breadcrumb-item"><a href="./{{ parent.id }}">{{ parent.title }}</a></li>
+        {% endfor %}
+        <li class="breadcrumb-item active" aria-current="page">{{ title }}</li>
+      </ol>
+    </nav>
+    {% endif %}
+
+    <h1>{{ title }}</h1>
+    {% if description %}<p>{{ description }}</p>{% endif %}
+
+    {% if children_count %}
+    <div class="children">
+      <div class="row">
+        
+        {% for child in children %}
+        <div class="mb-4 col-sm-3">
+          {% include "card.html" ignore missing with context %}
+        </div>
+        {% endfor %}
+      </div>
+
+    </div>
+    {% else %}
+    <p class="alert alert-warning">This topic has no children. This is unexpected. You should probably go-up the hierarchy.</p>
+    {% endif %}
+  </div>
+<script src="./assets/bootstrap/js/bootstrap.bundle.min.js">
+</script>
+</body>
+</html>

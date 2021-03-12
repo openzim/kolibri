@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
+import os
 import pathlib
 import logging
 
@@ -15,10 +16,8 @@ with open(ROOT_DIR.joinpath("VERSION"), "r") as fh:
 
 SCRAPER = f"{NAME} {VERSION}"
 
-SERVERS = {
-    "production": "https://studio.learningequality.org",
-    "develop": "https://develop.studio.learningequality.org",
-}
+STUDIO_DEFAULT_BASE_URL = "https://studio.learningequality.org"
+STUDIO_URL = os.getenv("STUDIO_URL", STUDIO_DEFAULT_BASE_URL)
 
 
 class Global:

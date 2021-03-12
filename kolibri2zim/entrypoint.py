@@ -20,9 +20,10 @@ def main():
 
     parser.add_argument(
         "--format",
-        help="Format to download/transcode video to. webm is smaller",
+        help="Format to convert videos video to. Source videos are mp4. "
+        "Webm videos are smaller but require transcoding.",
         choices=["mp4", "webm"],
-        default="webm",
+        default="mp4",
         dest="video_format",
     )
 
@@ -35,7 +36,8 @@ def main():
 
     parser.add_argument(
         "--autoplay",
-        help="Enable autoplay on video articles. Behavior differs on platforms/browsers.",
+        help="Enable autoplay on video articles. "
+        "Behavior differs on platforms/browsers.",
         action="store_true",
         default=False,
     )
@@ -64,7 +66,8 @@ def main():
 
     parser.add_argument(
         "--tags",
-        help="List of comma-separated Tags for the ZIM file. category:other, kolibri, and _videos:yes added automatically",
+        help="List of comma-separated Tags for the ZIM file. "
+        "category:other, kolibri, and _videos:yes added automatically",
     )
 
     parser.add_argument(
@@ -76,7 +79,8 @@ def main():
 
     parser.add_argument(
         "--tmp-dir",
-        help="Path to create temp folder in. Used for building ZIM file. Receives all data (storage space)",
+        help="Path to create temp folder in. Used for building ZIM file. "
+        "Receives all data (storage space)",
     )
 
     parser.add_argument(
@@ -91,6 +95,13 @@ def main():
         default=False,
         action="store_true",
         dest="keep_build_dir",
+    )
+
+    parser.add_argument(
+        "--concurrency",
+        help="How Number of parallel processes to run",
+        default=1,
+        type=int,
     )
 
     parser.add_argument(
