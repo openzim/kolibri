@@ -127,3 +127,11 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# assets that we download
+kolibri2zim/templates/assets/bootstrap/
+kolibri2zim/templates/assets/pdfjs/
+kolibri2zim/templates/assets/videojs/
+kolibri2zim/templates/assets/jquery.min.js
+kolibri2zim/templates/assets/ogvjs/
+kolibri2zim/templates/assets/videojs-ogvjs.js

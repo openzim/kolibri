@@ -21,6 +21,14 @@ ASSETS_PATH="${SCRIPT_PATH}/kolibri2zim/templates/assets"
 
 echo "About to download JS assets to ${ASSETS_PATH}"
 
+echo "getting pdf.js"
+curl -L -O https://github.com/mozilla/pdf.js/releases/download/v2.6.347/pdfjs-2.6.347-es5-dist.zip
+rm -rf $ASSETS_PATH/pdfjs
+mkdir -p $ASSETS_PATH/pdfjs
+unzip -o -d $ASSETS_PATH/pdfjs pdfjs-2.6.347-es5-dist.zip
+rm -rf $ASSETS_PATH/pdfjs/web/compressed.tracemonkey-pldi-09.pdf
+rm pdfjs-2.6.347-es5-dist.zip
+
 echo "getting video.js"
 curl -L -O https://github.com/videojs/video.js/releases/download/v7.8.1/video-js-7.8.1.zip
 rm -rf $ASSETS_PATH/videojs
@@ -47,27 +55,12 @@ mv videojs-ogvjs-1.3.1/dist/videojs-ogvjs.js $ASSETS_PATH/videojs-ogvjs.js
 rm -rf videojs-ogvjs-1.3.1
 rm -f v1.3.1.zip
 
-echo "getting material-components-web.min.js"
-curl -L -O https://unpkg.com/material-components-web@latest/dist/material-components-web.min.js
-rm -f $ASSETS_PATH/material-components-web.min.js
-mv material-components-web.min.js $ASSETS_PATH/material-components-web.min.js
-
-echo "getting material-components-web.min.css"
-curl -L -O https://unpkg.com/material-components-web@latest/dist/material-components-web.min.css
-rm -f $ASSETS_PATH/material-components-web.min.css
-mv material-components-web.min.css $ASSETS_PATH/material-components-web.min.css
-
-echo "getting roboto-mono font"
-curl -L -o roboto-mono.zip http://google-webfonts-helper.herokuapp.com/api/fonts/roboto-mono?download=zip\&subsets=vietnamese,latin-ext,latin,greek,cyrillic-ext,cyrillic\&variants=100,200,300,500,600,700,regular\&formats=woff,woff2
-rm -rf $ASSETS_PATH/fonts/roboto-mono
-mkdir -p $ASSETS_PATH/fonts/roboto-mono
-unzip -o -d $ASSETS_PATH/fonts/roboto-mono roboto-mono.zip
-rm -f roboto-mono.zip
-
-echo "getting material icons"
-curl -L -o material-icons.woff2 https://fonts.gstatic.com/s/materialicons/v70/flUhRq6tzZclQEJ-Vdg-IuiaDsNc.woff2
-rm -rf $ASSETS_PATH/material-icons.woff2
-mv material-icons.woff2 $ASSETS_PATH/material-icons.woff2
+echo "getting bootstrap"
+curl -L -O https://github.com/twbs/bootstrap/releases/download/v5.0.0-beta2/bootstrap-5.0.0-beta2-dist.zip
+rm -f $ASSETS_PATH/bootstrap
+unzip -o bootstrap-5.0.0-beta2-dist.zip
+mv bootstrap-5.0.0-beta2-dist $ASSETS_PATH/bootstrap
+rm -rf bootstrap-5.0.0-beta2-dist.zip
 
 if command -v fix_ogvjs_dist > /dev/null; then
     echo "fixing JS files"
