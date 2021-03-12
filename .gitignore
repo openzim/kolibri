@@ -135,3 +135,4 @@ kolibri2zim/templates/assets/videojs/
 kolibri2zim/templates/assets/jquery.min.js
 kolibri2zim/templates/assets/ogvjs/
 kolibri2zim/templates/assets/videojs-ogvjs.js
+.dockerignore

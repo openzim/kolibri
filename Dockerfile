@@ -1,4 +1,4 @@
-FROM python:3.8
+FROM python:3.8-buster
 
 # Install necessary packages
 RUN apt-get update -y \
@@ -14,4 +14,4 @@ RUN cd /src/ && python3 ./setup.py install
 
 RUN mkdir -p /output
 WORKDIR /output
-CMD ["ted2zim", "--help"]
+CMD ["kolibri2zim", "--help"]
