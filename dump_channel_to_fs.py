@@ -98,9 +98,10 @@ def get_rows(db_path, query):
 def dump(channel_id, build_dir=None, force=False):
     build_path = pathlib.Path(build_dir or "build")
     logger.info(f"dumping {channel_id} into {build_path}")
-    build_path.mkdir(exist_ok=True)
+    build_path.mkdir(exist_ok=True, parents=True)
 
     db_path = build_path / "content" / "databases" / f"{channel_id}.sqlite3"
+    db_path.parent.mkdir(exist_ok=True, parents=True)
     if db_path.exists() and not force:
         logger.info(f"Reusing existing DB at {db_path}")
     else:
