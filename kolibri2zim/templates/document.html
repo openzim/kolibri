@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block head %}
+<style type="text/css">
+html, body
+{
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+}
+
+iframe {
+  width: 100%;
+  height: 100%;
+  overflow: scroll;
+}
+.nav-btn {
+    padding: 0 .5rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<ul class="nav nav-tabs">
+<li class="nav-item">
+  <a class="nav-link active" aria-current="page" href="{{ node_id }}">Main document ({{ main_document_ext|upper }})</a>
+</li>
+{% if alt_document %}
+<li class="nav-item">
+  <a class="nav-link" href="{{ node_id }}/alt">Alt Document ({{ alt_document_ext|upper }})</a>
+</li>
+{% endif %}
+<li class="nav-item nav-btn">
+    <a class="btn btn-primary" href="{{ main_document }}"><i class="bi bi-file-earmark-arrow-down"></i> Download {{ main_document_ext|upper }}</a>
+</li>
+{% if alt_document %}
+<li class="nav-item nav-btn">
+  <a class="btn btn-secondary" href="{{ alt_document }}"><i class="bi bi-file-earmark-arrow-down"></i> Download {{ alt_document_ext|upper }}</a>
+</li>
+{% endif %}
+</ul>
+
+<iframe id="frame" width="100%" height="100%" src="{{ target }}" frameborder="0" seamless="seamless" scrolling="yes" class="wb_iframe" allow="autoplay; fullscreen">
+  
+</iframe>
+{% endblock %}
+
+{% block script %}
+<script type="text/javascript">
+    function resizeFrameToFullHeight(){
+        let windowHeight = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
+        let frame = document.getElementById("frame");
+        let headerHeight = frame.getBoundingClientRect().top;
+        let newHeight = windowHeight - headerHeight;
+        frame.style.height = newHeight + 'px';
+    }
+    window.addEventListener('resize', resizeFrameToFullHeight, {capture: true});
+    resizeFrameToFullHeight();
+</script>
+{% endblock %}

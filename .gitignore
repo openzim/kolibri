@@ -1,3 +1,4 @@
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -128,6 +129,8 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
+.DS_Store
+
 # assets that we download
 kolibri2zim/templates/assets/bootstrap/
 kolibri2zim/templates/assets/pdfjs/
@@ -136,3 +139,6 @@ kolibri2zim/templates/assets/jquery.min.js
 kolibri2zim/templates/assets/ogvjs/
 kolibri2zim/templates/assets/videojs-ogvjs.js
 .dockerignore
+kolibri2zim/templates/assets/epub.min.js
+kolibri2zim/templates/assets/bootstrap-icons/
+kolibri2zim/templates/assets/jszip.min.js

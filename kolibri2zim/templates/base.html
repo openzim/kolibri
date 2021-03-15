@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>{{ title }}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"> 
+  <meta name="description" content="{{ description }}">
+  <meta name="author" content="{% if author %}{{ author }}{% else %}Learning Equality{% endif %}">
+  <link href="./assets/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link href="./assets/bootstrap-icons/bootstrap-icons.css" rel="stylesheet" />
+  {% block head %}{% endblock %}
+</head>
+<body>
+  <div class="container">
+    {% if parents_count %}
+    <nav style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
+      <ol class="breadcrumb">
+        {% for parent in parents %}
+        <li class="breadcrumb-item"><a href="./{{ parent.id }}">{{ parent.title }}</a></li>
+        {% endfor %}
+        <li class="breadcrumb-item active" aria-current="page">{{ title }}</li>
+      </ol>
+    </nav>
+    {% endif %}
+
+    <h1>{{ title }}</h1>
+    {% if description %}<p>{{ description }}</p>{% endif %}
+
+    {% block content %}{% endblock %}
+  </div>
+<script src="./assets/bootstrap/js/bootstrap.bundle.min.js"></script>
+{% block script %}{% endblock %}
+</body>
+</html>

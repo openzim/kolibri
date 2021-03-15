@@ -119,10 +119,15 @@ class Kolibri2Zim:
 
     def add_local_files(self, root_path, folder):
         """ recursively add local files from {folder} starting at {path} """
+        non_front = ("viewer.html", "epub_embed.html")
         for fpath in folder.iterdir():
             path = "/".join([root_path, fpath.name])
             if fpath.is_file():
-                self.creator.add_item_for(path=path, title="", fpath=fpath)
+                mimetype = "text/html;raw=true" if fpath.name in non_front else None
+                self.creator.add_item_for(
+                    path=path, title="", fpath=fpath, mimetype=mimetype
+                )
+                logger.debug(f"adding {path}")
             else:
                 self.add_local_files(path, fpath)
 
@@ -298,7 +303,6 @@ class Kolibri2Zim:
 
         we'd solely add the perseus file in the ZIM along with the perseus reader from
         https://github.com/Khan/perseus"""
-        raise NotImplementedError("exercise nodes not supported")
 
     def add_document_node(self, node_id):
         """Add content from this `document` node to zim
@@ -317,65 +321,53 @@ class Kolibri2Zim:
         # TODO: add support for epub.js
         """
 
+        def target_for(file):
+            filename = filename_for(file)
+            if file["ext"] == "pdf":
+                return f"./assets/pdfjs/web/viewer.html?file=../../../{filename}"
+            if file["ext"] == "epub":
+                return f"./assets/epub_embed.html?url=../{filename}"
+
         # record the actual document
         files = self.db.get_node_files(node_id, thumbnail=False)
         if not files:
             return
-
         files = list(files)
+
+        try:
+            main_document = next(filter(lambda file: file["prio"] == 1, files))
+        except StopIteration:
+            return
+
+        try:
+            alt_document = next(filter(lambda file: file["prio"] == 2, files))
+        except StopIteration:
+            alt_document = None
+
         for file in files:
             self.funnel_file(file["id"], file["ext"])
+            file["target"] = target_for(file)
 
-        node = self.db.get_node(node_id)
+        node = self.db.get_node(node_id, with_parents=True)
 
-        def add_pdf_helper(file):
-            # create an accessible page for this content
-            filename = filename_for(file)
-            html = self.jinja2_env.get_template("pdf_redirect.html").render(
-                node_id=node_id,
-                filename=filename,
-                target=f"./assets/pdfjs/web/viewer.html?file=../../../{filename}",
-                title=node["title"],
-            )
-            with self.creator_lock:
-                self.creator.add_item_for(
-                    path=file["id"],
-                    title=node["title"],
-                    content=html,
-                    mimetype="text/html",
-                )
-
-        def add_epub_helper(file):
-            """ create an epub.js viewer (hopefuly) """
-            html = self.jinja2_env.get_template("epub.html").render(
-                node_id=node_id,
-                filename=filename_for(file),
-                title=node["title"],
-            )
-            with self.creator_lock:
-                self.creator.add_item_for(
-                    path=file["id"],
-                    title=node["title"],
-                    content=html,
-                    mimetype="text/html",
-                )
-
-        for file in files:
-            if file["ext"] == "pdf":
-                add_pdf_helper(file)
-            if file["ext"] == "epub":
-                add_epub_helper(file)
-
-        # add redirect to main file's helper
+        html = self.jinja2_env.get_template("document.html").render(
+            node_id=node_id,
+            main_document=filename_for(main_document),
+            main_document_ext=main_document["ext"],
+            alt_document=filename_for(alt_document),
+            alt_document_ext=alt_document["ext"],
+            target=target_for(main_document),
+            title=node["title"],
+            parents=node["parents"],
+            parents_count=node["parents_count"],
+        )
         with self.creator_lock:
-            self.creator.add_redirect(path=node_id, target_path=files[0]["id"])
-
-        # add redirect to priority2 file's helper if present
-        if len(files) > 1:
-            with self.creator_lock:
-                self.creator.add_redirect(
-                    path=f"{node_id}/alt", target_path=files[1]["id"]
-                )
+            self.creator.add_item_for(
+                path=node_id,
+                title=node["title"],
+                content=html,
+                mimetype="text/html",
+            )
 
     def add_html5_node(self, node_id):
         """Add content from this `html5` node to zim
