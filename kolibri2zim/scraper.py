@@ -308,7 +308,7 @@ class Kolibri2Zim:
             return
 
         # download ZIP file to memory
-        ark_url, ark_name = get_kolibri_url_for(*tuple(file))
+        ark_url, ark_name = get_kolibri_url_for(file["id"], file["ext"])
         ark_data = io.BytesIO()
         stream_file(url=ark_url, byte_stream=ark_data)
 

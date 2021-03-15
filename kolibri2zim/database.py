@@ -5,8 +5,6 @@
 import logging
 import sqlite3
 
-from .utils import get_link_for
-
 logger = logging.getLogger(__name__)
 
 
