@@ -200,7 +200,28 @@ class Kolibri2Zim:
         """Add content from this `audio` node to zim
 
         audio node are composed of a single mp3 file"""
-        raise NotImplementedError("audio nodes not supported")
+        file = self.db.get_node_file(node_id, thumbnail=False)
+        if not file:
+            return
+        self.funnel_file(file["id"], file["ext"])
+
+        node = self.db.get_node(node_id, with_parents=True)
+        html = self.jinja2_env.get_template("audio.html").render(
+            node_id=node_id,
+            parents=node["parents"],
+            parents_count=node["parents_count"],
+            filename=f'{file["id"]}.{file["ext"]}',
+            ext=file["ext"],
+            title=node["title"],
+            thumbnail=self.db.get_thumbnail_name(node_id),
+        )
+        with self.creator_lock:
+            self.creator.add_item_for(
+                path=node_id,
+                title=node["title"],
+                content=html,
+                mimetype="text/html",
+            )
 
     def add_exercise_node(self, node_id):
         """Add content from this `exercise` node to zim
@@ -239,7 +260,6 @@ class Kolibri2Zim:
         for file in files:
             self.funnel_file(file["id"], file["ext"])
 
-        # filename = ".".join(tuple(file))
         node = self.db.get_node(node_id)
 
         def add_pdf_helper(file):
