@@ -15,6 +15,7 @@ import jinja2
 from zimscraperlib.download import stream_file
 from zimscraperlib.zim.creator import Creator
 from zimscraperlib.zim.items import URLItem
+from zimscraperlib.i18n import find_language_names
 
 from .constants import ROOT_DIR, getLogger, STUDIO_URL
 from .database import KolibriDB
@@ -38,6 +39,10 @@ options = [
     "channel_id",
     "tmp_dir",
 ]
+
+
+def filename_for(file):
+    return f'{file["id"]}.{file["ext"]}'
 
 
 def get_kolibri_url_for(file_id: str, ext: str):
@@ -79,6 +84,7 @@ class Kolibri2Zim:
         # video-encoding info
         self.video_format = go("video_format")
         self.low_quality = go("low_quality")
+        self.autoplay = go("autoplay")
 
         # zim params
         self.fname = go("fname")
@@ -194,7 +200,66 @@ class Kolibri2Zim:
         video files are at most one of each `high_res_video` or `low_res_video`
         subtitle files (`video_subtitle`) are VTT files and are only limited by the
         number of language to select from in kolibri studio"""
-        raise NotImplementedError("video nodes not supported")
+
+        files = self.db.get_node_files(node_id, thumbnail=False)
+        if not files:
+            return
+        files = list(files)
+
+        try:
+            # find main video file
+            video_file = next(filter(lambda f: f["prio"] == 1, files))
+        except StopIteration:
+            # we have no video file
+            return
+
+        try:
+            alt_video_file = next(filter(lambda f: f["prio"] == 2, files))
+        except StopIteration:
+            # we have no supplementary video file (which is OK)
+            alt_video_file = None
+
+        # copy all files to ZIM
+        for file in files:
+            self.funnel_file(file["id"], file["ext"])
+
+        # prepare list of subtitles for template
+        subtitles = []
+        for file in filter(lambda f: f["preset"] == "video_subtitle", files):
+            try:
+                local, english = find_language_names(file["lang"])
+            except Exception:
+                english = file["lang"]
+            finally:
+                subtitles.append(
+                    {
+                        "code": file["lang"],
+                        "name": english,
+                        "filename": filename_for(file),
+                    }
+                )
+
+        node = self.db.get_node(node_id, with_parents=True)
+        html = self.jinja2_env.get_template("video.html").render(
+            node_id=node_id,
+            parents=node["parents"],
+            parents_count=node["parents_count"],
+            video_filename=filename_for(video_file),
+            video_filename_ext=video_file["ext"],
+            alt_video_filename=filename_for(alt_video_file),
+            alt_video_filename_ext=alt_video_file["ext"] if alt_video_file else None,
+            title=node["title"],
+            subtitles=sorted(subtitles, key=lambda i: i["code"]),
+            thumbnail=self.db.get_thumbnail_name(node_id),
+            autoplay=self.autoplay,
+        )
+        with self.creator_lock:
+            self.creator.add_item_for(
+                path=node_id,
+                title=node["title"],
+                content=html,
+                mimetype="text/html",
+            )
 
     def add_audio_node(self, node_id):
         """Add content from this `audio` node to zim
@@ -210,10 +275,11 @@ class Kolibri2Zim:
             node_id=node_id,
             parents=node["parents"],
             parents_count=node["parents_count"],
-            filename=f'{file["id"]}.{file["ext"]}',
+            filename=filename_for(file),
             ext=file["ext"],
             title=node["title"],
             thumbnail=self.db.get_thumbnail_name(node_id),
+            autoplay=self.autoplay,
         )
         with self.creator_lock:
             self.creator.add_item_for(
@@ -264,7 +330,7 @@ class Kolibri2Zim:
 
         def add_pdf_helper(file):
             # create an accessible page for this content
-            filename = f'{file["id"]}.{file["ext"]}'
+            filename = filename_for(file)
             html = self.jinja2_env.get_template("pdf_redirect.html").render(
                 node_id=node_id,
                 filename=filename,
@@ -281,10 +347,9 @@ class Kolibri2Zim:
 
         def add_epub_helper(file):
             """ create an epub.js viewer (hopefuly) """
-            filename = f'{file["id"]}.{file["ext"]}'
             html = self.jinja2_env.get_template("epub.html").render(
                 node_id=node_id,
-                filename=filename,
+                filename=filename_for(file),
                 title=node["title"],
             )
             with self.creator_lock:
