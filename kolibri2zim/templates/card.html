@@ -2,7 +2,6 @@
   <div class="card h-100">
     <div class="card-body">
       <h6 class="card-subtitle mb-2 text-muted">{{ child.title }}</h6>
-      {% if child.kind == 'document' %}<a class="btn btn-primary" href="./{{ child.id }}/alt">Open alt?</a>{% endif %}
     </div>
     {% if child.thumbnail %}<img class="card-img card-img-bottom" src="./{{ child.thumbnail }}" />{% endif %}
   </div>

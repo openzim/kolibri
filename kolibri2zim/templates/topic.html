@@ -12,9 +12,11 @@
   <div class="row">
     
     {% for child in children %}
+    {% if child.kind != 'exercise' %}
     <div class="mb-4 col-sm-3">
       {% include "card.html" ignore missing with context %}
     </div>
+    {% endif %}
     {% endfor %}
   </div>
 

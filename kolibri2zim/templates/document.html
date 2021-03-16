@@ -29,11 +29,11 @@ iframe {
 {% block content %}
 <ul class="nav nav-tabs">
 <li class="nav-item">
-  <a class="nav-link active" aria-current="page" href="{{ node_id }}">Main document ({{ main_document_ext|upper }})</a>
+  <a class="nav-link{% if not is_alt %} active{% endif %}" {% if not is_alt %} aria-current="page"{% endif %} href="{{ node_id }}">Main document ({{ main_document_ext|upper }})</a>
 </li>
 {% if alt_document %}
 <li class="nav-item">
-  <a class="nav-link" href="{{ node_id }}/alt">Alt Document ({{ alt_document_ext|upper }})</a>
+  <a class="nav-link{% if is_alt %} active{% endif %}" {% if is_alt %} aria-current="page"{% endif %} href="{{ node_id }}_alt">Alt Document ({{ alt_document_ext|upper }})</a>
 </li>
 {% endif %}
 <li class="nav-item nav-btn">

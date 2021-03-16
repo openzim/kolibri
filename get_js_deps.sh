@@ -26,13 +26,13 @@ curl -L -O https://github.com/mozilla/pdf.js/releases/download/v2.6.347/pdfjs-2.
 rm -rf $ASSETS_PATH/pdfjs
 mkdir -p $ASSETS_PATH/pdfjs
 unzip -o -d $ASSETS_PATH/pdfjs pdfjs-2.6.347-es5-dist.zip
-rm -rf $ASSETS_PATH/pdfjs/web/compressed.tracemonkey-pldi-09.pdf
+rm -rf $ASSETS_PATH/pdfjs/web/compressed.tracemonkey-pldi-09.pdf $ASSETS_PATH/pdfjs/build/*.map $ASSETS_PATH/pdfjs/web/cmaps $ASSETS_PATH/pdfjs/web/debugger.js $ASSETS_PATH/pdfjs/web/*.map $ASSETS_PATH/pdfjs/LICENSE
 rm pdfjs-2.6.347-es5-dist.zip
 
 echo "epub.js"
 curl -L -o $ASSETS_PATH/epub.min.js https://github.com/futurepress/epub.js/releases/download/v0.3.88/epub.min.js
 
-echo jszip.js
+echo "jszip.js"
 curl -L -O https://github.com/Stuk/jszip/archive/v3.5.0.zip
 rm -f $ASSETS_PATH/jszip.min.js
 unzip -o v3.5.0.zip
@@ -55,6 +55,7 @@ echo "getting ogv.js"
 curl -L -O https://github.com/brion/ogv.js/releases/download/1.6.1/ogvjs-1.6.1.zip
 rm -rf $ASSETS_PATH/ogvjs
 unzip -o ogvjs-1.6.1.zip
+rm -f ogvjs-1.6.1/*.{txt,md}
 mv ogvjs-1.6.1 $ASSETS_PATH/ogvjs
 rm -f ogvjs-1.6.1.zip
 

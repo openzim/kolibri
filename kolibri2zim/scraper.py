@@ -303,6 +303,7 @@ class Kolibri2Zim:
 
         we'd solely add the perseus file in the ZIM along with the perseus reader from
         https://github.com/Khan/perseus"""
+        logger.warning(f"[NOT SUPPORTED] not adding exercice node {node_id}")
 
     def add_document_node(self, node_id):
         """Add content from this `document` node to zim
@@ -313,12 +314,11 @@ class Kolibri2Zim:
 
 
         - add the actual PDF/epub files to zim at /{node_id}.{ext} (files' IDs)
-        - PDF: an HTML redirect at /{node_id} (file) to PDF.js viewer pointing to it
-        - EPUB: an HTML redirect at /{node_id} (file) to epub.js viewer pointing to it
-        - for the priority 1, a redirect from /{node_id} to the file's HTML
-        - for the priority 2, a redirect from /{node_id}/alt to the file's HTML
-
-        # TODO: add support for epub.js
+        - add an HTML page linking to files for download
+        - includes an iframe with the appropriate viewer
+         - using pdf.js for PDF
+         - using epub.js for EPUB
+        - add an additional page for the alternate document with its viewer
         """
 
         def target_for(file):
@@ -349,25 +349,38 @@ class Kolibri2Zim:
             file["target"] = target_for(file)
 
         node = self.db.get_node(node_id, with_parents=True)
+        # convert generator to list as we might read it twice
+        node["parents"] = list(node["parents"])
 
-        html = self.jinja2_env.get_template("document.html").render(
-            node_id=node_id,
-            main_document=filename_for(main_document),
-            main_document_ext=main_document["ext"],
-            alt_document=filename_for(alt_document),
-            alt_document_ext=alt_document["ext"],
-            target=target_for(main_document),
-            title=node["title"],
-            parents=node["parents"],
-            parents_count=node["parents_count"],
-        )
-        with self.creator_lock:
-            self.creator.add_item_for(
-                path=node_id,
+        # generate page once for each document, changing only `is_alt`
+        if alt_document:
+            options = [False, True]
+        else:
+            options = [False]  # main_document only
+
+        for is_alt in options:
+            html = self.jinja2_env.get_template("document.html").render(
+                node_id=node_id,
+                main_document=filename_for(main_document),
+                main_document_ext=main_document["ext"],
+                alt_document=filename_for(alt_document),
+                alt_document_ext=alt_document["ext"],
+                target=target_for(alt_document if is_alt else main_document),
                 title=node["title"],
-                content=html,
-                mimetype="text/html",
+                parents=node["parents"],
+                parents_count=node["parents_count"],
+                is_alt=is_alt,
             )
+            with self.creator_lock:
+                path = node_id
+                if is_alt:
+                    path += "_alt"
+                self.creator.add_item_for(
+                    path=path,
+                    title=node["title"],
+                    content=html,
+                    mimetype="text/html",
+                )
 
     def add_html5_node(self, node_id):
         """Add content from this `html5` node to zim
