@@ -11,7 +11,6 @@
     {% if thumbnail %}poster="{{ thumbnail }}"{% endif %}
     data-setup='{"techOrder": ["html5", "ogvjs"], "ogvjs": {"base": "assets/ogvjs"}, "autoplay": {% if autoplay %}true{% else %}false{% endif %}, "preload": true, "controls": true, "controlBar": {"pictureInPictureToggle":false}}'>
     <source src="{{ video_filename }}" type="video/{{ video_filename_ext }}" />
-    <source src="{{ alt_video_filename }}" type="video/{{ alt_video_filename_ext }}" />
     {% if subtitles %}
         {% for subtitle in subtitles %}
         <track kind="subtitles" src="{{ subtitle.filename }}" srclang="{{ subtitle.code }}" label="{{ subtitle.name }}" />

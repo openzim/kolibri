@@ -4,18 +4,22 @@
 
 import io
 import queue
+import shutil
 import base64
 import zipfile
 import pathlib
 import datetime
 import tempfile
 import threading
+import concurrent.futures as cf
 
 import jinja2
 from zimscraperlib.download import stream_file
 from zimscraperlib.zim.creator import Creator
 from zimscraperlib.zim.items import URLItem
 from zimscraperlib.i18n import find_language_names
+from zimscraperlib.video.presets import VideoWebmLow, VideoWebmHigh, VideoMp4Low
+from zimscraperlib.video.encoding import reencode
 
 from .constants import ROOT_DIR, getLogger, STUDIO_URL
 from .database import KolibriDB
@@ -24,7 +28,7 @@ logger = getLogger()
 options = [
     "debug",
     "name",
-    "video_format",
+    "use_webm",
     "low_quality",
     "output_dir",
     "fname",
@@ -34,7 +38,8 @@ options = [
     "publisher",
     "tags",
     "keep_build_dir",
-    "concurrency",
+    "threads",
+    "processes",
     "autoplay",
     "channel_id",
     "tmp_dir",
@@ -82,7 +87,7 @@ class Kolibri2Zim:
         self.channel_id = go("channel_id")
 
         # video-encoding info
-        self.video_format = go("video_format")
+        self.use_webm = go("use_webm")
         self.low_quality = go("low_quality")
         self.autoplay = go("autoplay")
 
@@ -104,7 +109,8 @@ class Kolibri2Zim:
         self.build_dir = pathlib.Path(tempfile.mkdtemp(dir=go("tmp_dir")))
 
         # debug/developer options
-        self.concurrency = go("concurrency")
+        self.nb_threads = go("threads")
+        self.nb_processes = go("processes")
         self.keep_build_dir = go("keep_build_dir")
         self.debug = go("debug")
 
@@ -131,10 +137,10 @@ class Kolibri2Zim:
             else:
                 self.add_local_files(path, fpath)
 
-    def process_all_nodes(self, root_id, concurrency):
+    def process_all_nodes(self, root_id, nb_threads):
         """Loop on content nodes to create zim entries from kolibri DB
 
-        this is a blocking step that uses concurrency"""
+        this is a blocking step that uses nb_threads"""
         q = queue.Queue()
 
         # fill queue with (node_id, kind) tuples
@@ -145,8 +151,8 @@ class Kolibri2Zim:
         ):
             q.put_nowait(tuple(row))
 
-        # create {concurrency} threads to consume and process the queue via .add_node()
-        for _ in range(concurrency):
+        # create {nb_threads} threads to consume and process the queue via .add_node()
+        for _ in range(nb_threads):
             threading.Thread(
                 target=worker_wrapper,
                 args=(self.add_node, q),
@@ -174,6 +180,13 @@ class Kolibri2Zim:
         with self.creator_lock:
             self.creator.add_item(URLItem(url=url, path=fname))
         logger.debug(f"Added direct file {fname}")
+
+    def download_to_disk(self, file_id, ext):
+        """ download a Kolibri file to the build-dir using its filename """
+        url, fname = get_kolibri_url_for(file_id, ext)
+        fpath = self.build_dir / fname
+        stream_file(url, fpath)
+        return fpath
 
     def add_topic_node(self, node_id):
         """Build and add the HTML page for a single topic node
@@ -209,28 +222,65 @@ class Kolibri2Zim:
         files = self.db.get_node_files(node_id, thumbnail=False)
         if not files:
             return
-        files = list(files)
+        files = sorted(files, key=lambda f: f["prio"])
+        it = filter(lambda f: f["supp"] == 0, files)
 
         try:
             # find main video file
-            video_file = next(filter(lambda f: f["prio"] == 1, files))
+            main_video_file = next(it)
         except StopIteration:
             # we have no video file
             return
 
         try:
-            alt_video_file = next(filter(lambda f: f["prio"] == 2, files))
+            alt_video_file = next(it)
         except StopIteration:
             # we have no supplementary video file (which is OK)
             alt_video_file = None
 
-        # copy all files to ZIM
-        for file in files:
-            self.funnel_file(file["id"], file["ext"])
+        # decide which file to keep and what to do with it
+
+        # we'll reencode, using the best file with appropriate preset
+        if self.use_webm:
+            # download original video
+            src = self.download_to_disk(main_video_file["id"], main_video_file["ext"])
+            dst = src.with_suffix(".webm")
+            video_filename = dst.name
+            video_filename_ext = dst.suffix[1:]
+            preset = VideoWebmLow if self.low_quality else VideoWebmHigh
+
+            # request conversion
+            self.convert_and_add_video_aside(src, dst, preset())
+
+        # we want low-q but no webm yet don't have low_res file, let's reencode
+        elif self.low_quality and alt_video_file is None:
+            # download original video
+            src = self.download_to_disk(main_video_file["id"], main_video_file["ext"])
+
+            # move source file to a new name and swap variables so our target will
+            # be the previously source one
+            src_ = src.with_suffix(f"{src.suffix}.orig")
+            shutil.move(src, src_)
+            dst = src
+            src = src_
+
+            video_filename = dst.name
+            video_filename_ext = dst.suffix[1:]
+
+            # request conversion
+            self.convert_and_add_video_aside(src, dst, VideoMp4Low())
+
+        # we want mp4, either in high-q or we have a low_res file to use
+        else:
+            video_file = alt_video_file if self.low_quality else main_video_file
+            self.funnel_file(video_file["id"], video_file["ext"])
+            video_filename_ext = video_file["ext"]
+            video_filename = filename_for(video_file)
 
         # prepare list of subtitles for template
         subtitles = []
         for file in filter(lambda f: f["preset"] == "video_subtitle", files):
+            self.funnel_file(file["id"], file["ext"])
             try:
                 local, english = find_language_names(file["lang"])
             except Exception:
@@ -249,10 +299,8 @@ class Kolibri2Zim:
             node_id=node_id,
             parents=node["parents"],
             parents_count=node["parents_count"],
-            video_filename=filename_for(video_file),
-            video_filename_ext=video_file["ext"],
-            alt_video_filename=filename_for(alt_video_file),
-            alt_video_filename_ext=alt_video_file["ext"] if alt_video_file else None,
+            video_filename=video_filename,
+            video_filename_ext=video_filename_ext,
             title=node["title"],
             subtitles=sorted(subtitles, key=lambda i: i["code"]),
             thumbnail=self.db.get_thumbnail_name(node_id),
@@ -265,6 +313,45 @@ class Kolibri2Zim:
                 content=html,
                 mimetype="text/html",
             )
+
+    def add_video_upon_completion(self, future):
+        """adds the converted video inside this future to the zim
+
+        logs error in case of failure"""
+        if future.cancelled():
+            return
+        src_fpath, dst_fpath = self.videos_futures.get(future)
+
+        try:
+            future.result()
+        except Exception as exc:
+            logger.error(f"Error re-encoding {src_fpath.name}: {exc}")
+            logger.exception(exc)
+            return
+
+        logger.debug(f"re-encoded {src_fpath.name} successfuly")
+
+        with self.creator_lock:
+            self.creator.add_item_for(
+                path=dst_fpath.name,
+                fpath=dst_fpath,
+                delete_fpath=True,
+            )
+
+    def convert_and_add_video_aside(self, src_fpath, dest_fpath, preset):
+        """add video to the process-based convertion queue"""
+
+        future = self.videos_executor.submit(
+            reencode,
+            src_path=src_fpath,
+            dst_path=dest_fpath,
+            ffmpeg_args=preset.to_ffmpeg_args(),
+            delete_src=True,
+            with_process=False,
+            failsafe=False,
+        )
+        self.videos_futures.update({future: (src_fpath, dest_fpath)})
+        future.add_done_callback(self.add_video_upon_completion)
 
     def add_audio_node(self, node_id):
         """Add content from this `audio` node to zim
@@ -332,15 +419,16 @@ class Kolibri2Zim:
         files = self.db.get_node_files(node_id, thumbnail=False)
         if not files:
             return
-        files = list(files)
+        files = sorted(filter(lambda f: f["supp"] == 0, files), key=lambda f: f["prio"])
+        it = iter(files)
 
         try:
-            main_document = next(filter(lambda file: file["prio"] == 1, files))
+            main_document = next(it)
         except StopIteration:
             return
 
         try:
-            alt_document = next(filter(lambda file: file["prio"] == 2, files))
+            alt_document = next(it)
         except StopIteration:
             alt_document = None
 
@@ -363,8 +451,8 @@ class Kolibri2Zim:
                 node_id=node_id,
                 main_document=filename_for(main_document),
                 main_document_ext=main_document["ext"],
-                alt_document=filename_for(alt_document),
-                alt_document_ext=alt_document["ext"],
+                alt_document=filename_for(alt_document) if alt_document else None,
+                alt_document_ext=alt_document["ext"] if alt_document else None,
                 target=target_for(alt_document if is_alt else main_document),
                 title=node["title"],
                 parents=node["parents"],
@@ -417,7 +505,7 @@ class Kolibri2Zim:
             f"  channel_id: {self.channel_id}\n"
             f"  build_dir: {self.build_dir}\n"
             f"  output_dir: {self.output_dir}\n"
-            f"  video format : {self.video_format}\n"
+            f"  using webm : {self.use_webm}\n"
             f"  low_quality : {self.low_quality}\n"
         )
 
@@ -463,8 +551,26 @@ class Kolibri2Zim:
         logger.info("Adding local files (assests)")
         self.add_local_files("assets", self.templates_dir.joinpath("assets"))
 
+        # setup a dedicated queue for videos to convert
+        self.videos_futures = {}
+        self.videos_executor = cf.ProcessPoolExecutor(max_workers=self.nb_processes)
+
         logger.info("Processing all nodes")
-        self.process_all_nodes(root_id, self.concurrency)
+        self.process_all_nodes(root_id, self.nb_threads)
+        logger.info("Processed all nodes.")
+
+        # await completion of the videos queue
+        if self.videos_futures:
+            nb_incomplete = sum([1 for f in self.videos_futures if f.running()])
+            logger.info(f"Awaiting {nb_incomplete} video convertions to complete…")
+        cf.wait(self.videos_futures.keys(), return_when=cf.FIRST_EXCEPTION)
+        # properly shutting down the executor should allow processing
+        # futures's callbacks (zim addition) as the wait() function
+        # only awaits future completion and doesn't include callbacks
+        self.videos_executor.shutdown()
+
+        # we shall check wether we completed successfuly or not and fail the scraper
+        # accordingly
 
         logger.info("Finishing ZIM file…")
         self.creator.finish()

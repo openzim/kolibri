@@ -4,7 +4,7 @@
 
 import argparse
 
-from .constants import NAME, SCRAPER, getLogger, setDebug
+from .constants import NAME, SCRAPER, Global, getLogger, setDebug
 
 
 def main():
@@ -19,17 +19,19 @@ def main():
     )
 
     parser.add_argument(
-        "--format",
-        help="Format to convert videos video to. Source videos are mp4. "
-        "Webm videos are smaller but require transcoding.",
-        choices=["mp4", "webm"],
-        default="mp4",
-        dest="video_format",
+        "--use-webm",
+        help="Kolibri videos are in mp4. Choosing webm will require videos to be "
+        "re-encoded. Result will be slightly smaller and of lower quality. WebM support"
+        " is bundled in the ZIM so videos will be playable on every platform.",
+        action="store_true",
+        default=False,
+        dest="use_webm",
     )
 
     parser.add_argument(
         "--low-quality",
-        help="Re-encode video using stronger compression",
+        help="Uses only the `low_res` version of videos if available. "
+        "If not, recompresses using agressive compression.",
         action="store_true",
         default=False,
     )
@@ -98,9 +100,20 @@ def main():
     )
 
     parser.add_argument(
-        "--concurrency",
-        help="How Number of parallel processes to run",
+        "--threads",
+        help="Number of threads to use to handle nodes concurrently. "
+        "Increase to speed-up I/O operations (disk, network). Default: 1",
         default=1,
+        type=int,
+    )
+
+    parser.add_argument(
+        "--processes",
+        help="Number of processes to dedicate to media optimizations. "
+        "Defaults to number of available CPU threads visible minus 1 except when run "
+        "inside a container (Docker) where we default to 1 as the detected CPUs are "
+        f"the ones of the host. Default: {Global.nb_available_cpus}",
+        default=Global.nb_available_cpus,
         type=int,
     )
 
