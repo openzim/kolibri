@@ -42,6 +42,7 @@ options = [
     "processes",
     "autoplay",
     "channel_id",
+    "root_id",
     "tmp_dir",
 ]
 
@@ -85,6 +86,7 @@ class Kolibri2Zim:
             return kwargs.get(option)
 
         self.channel_id = go("channel_id")
+        self.root_id = go("root_id")
 
         # video-encoding info
         self.use_webm = go("use_webm")
@@ -137,19 +139,18 @@ class Kolibri2Zim:
             else:
                 self.add_local_files(path, fpath)
 
-    def process_all_nodes(self, root_id, nb_threads):
+    def process_all_nodes(self, nb_threads):
         """Loop on content nodes to create zim entries from kolibri DB
 
         this is a blocking step that uses nb_threads"""
         q = queue.Queue()
 
-        # fill queue with (node_id, kind) tuples
-        for row in self.db.get_rows(
-            "SELECT id, kind FROM content_contentnode "
-            "WHERE available=? AND channel_id=?",
-            (1, self.channel_id),
-        ):
-            q.put_nowait(tuple(row))
+        # add root node
+        q.put_nowait((self.db.root["id"], self.db.root["kind"]))
+
+        # fill queue with (node_id, kind) tuples for all root node's descendants
+        for node in self.db.get_node_descendants(self.root_id):
+            q.put_nowait((node["id"], node["kind"]))
 
         # create {nb_threads} threads to consume and process the queue via .add_node()
         for _ in range(nb_threads):
@@ -527,15 +528,10 @@ class Kolibri2Zim:
         logger.info("Setup Zim Creator")
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
-        root_id = self.db.get_cell(
-            "SELECT root_id FROM content_channelmetadata WHERE id=?",
-            (self.channel_id,),
-        )
-
         self.creator_lock = threading.Lock()
         self.creator = Creator(
             filename=self.output_dir.joinpath(self.fname),
-            main_path=root_id,
+            main_path=self.root_id,
             favicon_path="favicon.png",
             language="eng",
             title=self.title,
@@ -556,7 +552,7 @@ class Kolibri2Zim:
         self.videos_executor = cf.ProcessPoolExecutor(max_workers=self.nb_processes)
 
         logger.info("Processing all nodes")
-        self.process_all_nodes(root_id, self.nb_threads)
+        self.process_all_nodes(self.nb_threads)
         logger.info("Processed all nodes.")
 
         # await completion of the videos queue
@@ -577,6 +573,9 @@ class Kolibri2Zim:
         logger.info("  done.")
 
     def download_db(self):
+        """download channel DB from kolibri and initialize DB
+
+        Also sets the root_id with DB-computer value"""
         # download database
         fpath = self.build_dir.joinpath("db.sqlite3")
         logger.debug(f"Downloading database into {fpath.name}…")
@@ -584,7 +583,8 @@ class Kolibri2Zim:
             f"{STUDIO_URL}/content/databases/{self.channel_id}.sqlite3",
             fpath,
         )
-        self.db = KolibriDB(fpath)
+        self.db = KolibriDB(fpath, self.root_id)
+        self.root_id = self.db.root_id
 
     def sanitize_inputs(self):
         channel_meta = self.db.get_channel_metadata(self.channel_id)

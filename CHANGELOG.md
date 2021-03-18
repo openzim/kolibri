@@ -6,3 +6,4 @@
 - uses libzim7
 - multi-threaded for node processing (IO bound)
 - multi-processed for media convertion (CPU bound)
+- supports scraping from any node in channel

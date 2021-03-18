@@ -19,6 +19,14 @@ def main():
     )
 
     parser.add_argument(
+        "--root-id",
+        help="The node ID (usually Topic) from where to start the scraper. "
+        "Defaults to the root of the channel.",
+        required=False,
+        default=None,
+    )
+
+    parser.add_argument(
         "--use-webm",
         help="Kolibri videos are in mp4. Choosing webm will require videos to be "
         "re-encoded. Result will be slightly smaller and of lower quality. WebM support"

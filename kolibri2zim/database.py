@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
+import pathlib
 import logging
 import sqlite3
 
@@ -22,7 +23,7 @@ class KolibriDB:
     Kolibri uses the Modified Preorder Tree Traversal model, from django-mptt
     https://gist.github.com/tmilos/f2f999b5839e2d42d751"""
 
-    def __init__(self, fpath):
+    def __init__(self, fpath: pathlib.Path, root_id: str = None):
         self.conn = sqlite3.connect(
             f"file:{fpath.expanduser().resolve()}?mode=ro",
             uri=True,
@@ -31,6 +32,13 @@ class KolibriDB:
         self.conn.row_factory = sqlite3.Row
         self._fpath = fpath
 
+        if root_id is None:
+            root_id = self.get_cell("SELECT root_id FROM content_channelmetadata")
+
+        self.root = self.get_node(root_id)
+        if not self.root:
+            raise ValueError(f"No node for root-id {root_id}")
+
     @property
     def fpath(self):
         return self._fpath
@@ -38,6 +46,18 @@ class KolibriDB:
     @property
     def name(self):
         return self.fpath.name
+
+    @property
+    def root_id(self):
+        return self.root["id"]
+
+    @property
+    def root_left(self):
+        return self.root["left"]
+
+    @property
+    def root_right(self):
+        return self.root["right"]
 
     def get_conn(self):
         return self.conn
@@ -63,9 +83,24 @@ class KolibriDB:
             "SELECT * FROM content_channelmetadata WHERE id=?", (channel_id,)
         )
 
+    def get_node_descendants(self, node_id, left=None, right=None):
+        if left is None or right is None:
+            node = self.get_node(node_id, with_parents=False, with_children=False)
+            left = node["left"]
+            right = node["right"]
+
+        for row in self.get_rows(
+            "SELECT id, title, kind "
+            "FROM content_contentnode WHERE lft > ? AND rght < ? "
+            "ORDER BY level ASC",
+            (left, right),
+        ):
+            row = dict(row)
+            yield row
+
     def get_node_children(self, node_id, left=None, right=None):
         if left is None or right is None:
-            node = self.get_node(with_parents=False, with_children=False)
+            node = self.get_node(node_id, with_parents=False, with_children=False)
             left = node["left"]
             right = node["right"]
 
@@ -104,8 +139,10 @@ class KolibriDB:
 
         for row in self.get_rows(
             "SELECT id, title FROM content_contentnode "
-            "WHERE lft < ? AND rght > ? ORDER BY Lft ASC",
-            (left, right),
+            "WHERE lft < ? AND rght > ? "
+            "AND lft >= ? AND rght <= ? "
+            "ORDER BY Lft ASC",
+            (left, right, self.root_left, self.root_right),
         ):
             yield dict(row)
 
@@ -117,13 +154,16 @@ class KolibriDB:
 
         return self.get_cell(
             "SELECT COUNT(*) FROM content_contentnode "
-            "WHERE lft < ? AND rght > ? ORDER BY Lft ASC",
-            (left, right),
+            "WHERE lft < ? AND rght > ? "
+            "AND lft >= ? AND rght <= ? "
+            "ORDER BY Lft ASC",
+            (left, right, self.root_left, self.root_right),
         )
 
     def get_node(self, node_id, with_parents=False, with_children=False):
         node = self.get_row(
-            "SELECT id, title, description, author, level, lft as left, rght as right "
+            "SELECT id, title, description, author, level, kind, "
+            "lft as left, rght as right "
             "FROM content_contentnode WHERE id=?",
             (node_id,),
         )
