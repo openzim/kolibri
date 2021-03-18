@@ -55,7 +55,7 @@ echo "getting ogv.js"
 curl -L -O https://github.com/brion/ogv.js/releases/download/1.6.1/ogvjs-1.6.1.zip
 rm -rf $ASSETS_PATH/ogvjs
 unzip -o ogvjs-1.6.1.zip
-rm -f ogvjs-1.6.1/*.{txt,md}
+rm -f ogvjs-1.6.1/*.txt ogvjs-1.6.1/*.md
 mv ogvjs-1.6.1 $ASSETS_PATH/ogvjs
 rm -f ogvjs-1.6.1.zip
 
