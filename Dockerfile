@@ -1,4 +1,5 @@
 FROM python:3.8-buster
+LABEL org.opencontainers.image.source https://github.com/openzim/kolibri2zim
 
 # Install necessary packages
 RUN apt-get update -y \

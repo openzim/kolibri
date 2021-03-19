@@ -756,7 +756,7 @@ class Kolibri2Zim:
         self.description = self.description.strip()
 
         if not self.author:
-            self.author = "Libretexts"
+            self.author = channel_meta["author"] or "Kolibri"
         self.author = self.author.strip()
 
         if not self.publisher:

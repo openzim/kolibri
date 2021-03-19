@@ -15,7 +15,7 @@ def main():
 
     parser.add_argument(
         "--channel-id",
-        help="The channel ID of the channel that you want to scrape",
+        help="The Kolibri channel ID that you want to scrape",
     )
 
     parser.add_argument(
@@ -24,6 +24,41 @@ def main():
         "Defaults to the root of the channel.",
         required=False,
         default=None,
+    )
+
+    parser.add_argument(
+        "--name",
+        help="ZIM name. Used as identifier and filename (date will be appended)",
+        required=True,
+    )
+
+    parser.add_argument(
+        "--title",
+        help="Custom title for your ZIM. Kolibri channel name otherwise",
+    )
+
+    parser.add_argument(
+        "--description",
+        help="Custom description for your ZIM. Kolibri channel description otherwise",
+    )
+
+    parser.add_argument(
+        "--favicon", help="URL for Favicon. Kolibri channel thumbnail otherwise"
+    )
+
+    parser.add_argument(
+        "--creator",
+        help="Name of content creator. Kolibri channel author or “Kolibri” otherwise",
+    )
+
+    parser.add_argument(
+        "--publisher", help="Custom publisher name (ZIM metadata). “OpenZIM” otherwise"
+    )
+
+    parser.add_argument(
+        "--tags",
+        help="List of comma-separated Tags for the ZIM file. "
+        "category:other, kolibri, and _videos:yes added automatically",
     )
 
     parser.add_argument(
@@ -50,34 +85,6 @@ def main():
         "Behavior differs on platforms/browsers.",
         action="store_true",
         default=False,
-    )
-
-    parser.add_argument(
-        "--name",
-        help="ZIM name. Used as identifier and filename (date will be appended)",
-        required=True,
-    )
-
-    parser.add_argument(
-        "--title",
-        help="Custom title for your ZIM. Based on selection otherwise.",
-    )
-
-    parser.add_argument(
-        "--description",
-        help="Custom description for your ZIM. Based on selection otherwise.",
-    )
-
-    parser.add_argument("--creator", help="Name of content creator", default="Kolibri")
-
-    parser.add_argument(
-        "--publisher", help="Custom publisher name (ZIM metadata)", default="Kiwix"
-    )
-
-    parser.add_argument(
-        "--tags",
-        help="List of comma-separated Tags for the ZIM file. "
-        "category:other, kolibri, and _videos:yes added automatically",
     )
 
     parser.add_argument(
