@@ -126,6 +126,12 @@ def main():
     )
 
     parser.add_argument(
+        "--optimization-cache",
+        help="URL with credentials to S3 for use as optimization cache",
+        dest="s3_url_with_credentials",
+    )
+
+    parser.add_argument(
         "--debug", help="Enable verbose output", action="store_true", default=False
     )
 

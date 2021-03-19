@@ -7,3 +7,4 @@
 - multi-threaded for node processing (IO bound)
 - multi-processed for media convertion (CPU bound)
 - supports scraping from any node in channel
+- added S3 optimization cache support

@@ -7,17 +7,20 @@ import queue
 import shutil
 import base64
 import zipfile
-import pathlib
 import datetime
 import tempfile
 import threading
+from pathlib import Path
 import concurrent.futures as cf
 
 import jinja2
+from pif import get_public_ip
+from kiwixstorage import KiwixStorage
 from zimscraperlib.download import stream_file
 from zimscraperlib.zim.creator import Creator
-from zimscraperlib.zim.items import URLItem
+from zimscraperlib.zim.items import URLItem, StaticItem
 from zimscraperlib.i18n import find_language_names
+from zimscraperlib.filesystem import get_file_mimetype
 from zimscraperlib.video.presets import VideoWebmLow, VideoWebmHigh, VideoMp4Low
 from zimscraperlib.video.encoding import reencode
 
@@ -44,6 +47,7 @@ options = [
     "channel_id",
     "root_id",
     "tmp_dir",
+    "s3_url_with_credentials",
 ]
 
 
@@ -105,14 +109,18 @@ class Kolibri2Zim:
         self.name = go("name")
 
         # directory setup
-        self.output_dir = pathlib.Path(go("output_dir")).expanduser().resolve()
+        self.output_dir = Path(go("output_dir")).expanduser().resolve()
         if go("tmp_dir"):
-            pathlib.Path(go("tmp_dir")).mkdir(parents=True, exist_ok=True)
-        self.build_dir = pathlib.Path(tempfile.mkdtemp(dir=go("tmp_dir")))
+            Path(go("tmp_dir")).mkdir(parents=True, exist_ok=True)
+        self.build_dir = Path(tempfile.mkdtemp(dir=go("tmp_dir")))
 
-        # debug/developer options
+        # performances options
         self.nb_threads = go("threads")
         self.nb_processes = go("processes")
+        self.s3_url_with_credentials = go("s3_url_with_credentials")
+        self.s3_storage = None
+
+        # debug/developer options
         self.keep_build_dir = go("keep_build_dir")
         self.debug = go("debug")
 
@@ -135,7 +143,7 @@ class Kolibri2Zim:
                 self.creator.add_item_for(
                     path=path, title="", fpath=fpath, mimetype=mimetype
                 )
-                logger.debug(f"adding {path}")
+                logger.debug(f"Adding {path}")
             else:
                 self.add_local_files(path, fpath)
 
@@ -180,7 +188,7 @@ class Kolibri2Zim:
         url, fname = get_kolibri_url_for(fid, fext)
         with self.creator_lock:
             self.creator.add_item(URLItem(url=url, path=fname))
-        logger.debug(f"Added direct file {fname}")
+        logger.debug(f"Added {fname} from Studio")
 
     def download_to_disk(self, file_id, ext):
         """ download a Kolibri file to the build-dir using its filename """
@@ -188,6 +196,65 @@ class Kolibri2Zim:
         fpath = self.build_dir / fname
         stream_file(url, fpath)
         return fpath
+
+    def funnel_from_s3(self, file_id, path, checksum, preset):
+        """whether it could fetch and add the file from S3 cache
+
+        - checks if a cache is configured
+        - checks if file is present
+        - checks if file is valid (corresponds to same original file)
+        - downloads and add to zim
+
+        returns True is all this succeeded, False otherwise"""
+        if not self.s3_storage:
+            return False
+
+        key = self.s3_key_for(file_id, preset)
+
+        # exit early if we don't have this object in bucket
+        if not self.s3_storage.has_object_matching(
+            key, meta={"checksum": checksum, "encoder_version": str(preset.VERSION)}
+        ):
+            return False
+
+        # download file into memory
+        fileobj = io.BytesIO()
+        try:
+            self.s3_storage.download_fileobj(key, fileobj)
+        except Exception as exc:
+            logger.error(f"failed to download {key} from cache: {exc}")
+            logger.exception(exc)
+            # make sure we fallback to re-encode
+            return False
+
+        # add to zim
+        with self.creator_lock:
+            self.creator.add_item(
+                StaticItem(
+                    path=path,
+                    fileobj=fileobj,
+                    mimetype=preset.mimetype,
+                )
+            )
+        logger.debug(f"Added {path} from S3::{key}")
+        return True
+
+    def s3_key_for(self, file_id, preset):
+        """compute in-bucket key for file"""
+        return f"{file_id[0]}/{file_id[1]}/{file_id}/{type(preset).__name__.lower()}"
+
+    def upload_to_s3(self, key, fpath, **meta):
+        """ whether it successfully uploaded to cache """
+        if not self.s3_storage:
+            return
+
+        logger.debug(f"Uploading {fpath.name} to S3::{key} with {meta}")
+        try:
+            self.s3_storage.upload_file(fpath, key, meta=meta)
+        except Exception as exc:
+            logger.error(f"{key} failed to upload to cache: {exc}")
+            return False
+        return True
 
     def add_topic_node(self, node_id):
         """Build and add the HTML page for a single topic node
@@ -210,7 +277,7 @@ class Kolibri2Zim:
             self.creator.add_item_for(
                 path=node_id, title=node["title"], content=html, mimetype="text/html"
             )
-        logger.debug(f"added topic #{node_id}")
+        logger.debug(f"Added topic #{node_id}")
 
     def add_video_node(self, node_id):
         """Add content from this `video` node to zim
@@ -228,7 +295,7 @@ class Kolibri2Zim:
 
         try:
             # find main video file
-            main_video_file = next(it)
+            video_file = next(it)
         except StopIteration:
             # we have no video file
             return
@@ -239,44 +306,64 @@ class Kolibri2Zim:
             # we have no supplementary video file (which is OK)
             alt_video_file = None
 
-        # decide which file to keep and what to do with it
+        # now decide which file to keep and what to do with it
+
+        # content_file has a 1:1 rel with content_localfile which is thre
+        # *implementation* of the file. We use that local file ID (its checksum)
+        # everywhere BUT as S3 cache ID as we want to overwrite the same key
+        # should a new version of the localfile for the same file arrives.
+        vid = video_file["id"]  # the local file ID (current version)
+        vfid = video_file["fid"]  # the file ID in DB (version agnostic)
+        vchk = video_file["checksum"]
 
         # we'll reencode, using the best file with appropriate preset
         if self.use_webm:
-            # download original video
-            src = self.download_to_disk(main_video_file["id"], main_video_file["ext"])
-            dst = src.with_suffix(".webm")
-            video_filename = dst.name
-            video_filename_ext = dst.suffix[1:]
-            preset = VideoWebmLow if self.low_quality else VideoWebmHigh
+            preset = VideoWebmLow() if self.low_quality else VideoWebmHigh()
+            src_fname = Path(filename_for(video_file))
+            path = str(src_fname.with_suffix(f".{preset.ext}"))
+            video_filename_ext = preset.ext
+            video_filename = src_fname.with_suffix(f".{video_filename_ext}").name
 
-            # request conversion
-            self.convert_and_add_video_aside(src, dst, preset())
+            # funnel from S3 cache if it is present there
+            if not self.funnel_from_s3(vfid, path, vchk, preset):
+
+                # download original video
+                src = self.download_to_disk(vid, video_file["ext"])
+                dst = src.with_suffix(".webm")
+
+                # request conversion
+                self.convert_and_add_video_aside(vfid, src, vchk, dst, path, preset)
 
         # we want low-q but no webm yet don't have low_res file, let's reencode
         elif self.low_quality and alt_video_file is None:
-            # download original video
-            src = self.download_to_disk(main_video_file["id"], main_video_file["ext"])
+            preset = VideoMp4Low()
+            src_fname = Path(filename_for(video_file))
+            path = str(src_fname.with_suffix(f".{preset.ext}"))
+            video_filename_ext = preset.ext
+            video_filename = src_fname.with_suffix(f".{video_filename_ext}").name
 
-            # move source file to a new name and swap variables so our target will
-            # be the previously source one
-            src_ = src.with_suffix(f"{src.suffix}.orig")
-            shutil.move(src, src_)
-            dst = src
-            src = src_
+            # funnel from S3 cache if it is present there
+            if not self.funnel_from_s3(vfid, path, vchk, preset):
 
-            video_filename = dst.name
-            video_filename_ext = dst.suffix[1:]
+                # download original video
+                src = self.download_to_disk(vid, video_file["ext"])
 
-            # request conversion
-            self.convert_and_add_video_aside(src, dst, VideoMp4Low())
+                # move source file to a new name and swap variables so our target will
+                # be the previously source one
+                src_ = src.with_suffix(f"{src.suffix}.orig")
+                shutil.move(src, src_)
+                dst = src
+                src = src_
+
+                # request conversion
+                self.convert_and_add_video_aside(vfid, src, vchk, dst, path, preset)
 
         # we want mp4, either in high-q or we have a low_res file to use
         else:
-            video_file = alt_video_file if self.low_quality else main_video_file
+            video_file = alt_video_file if self.low_quality else video_file
             self.funnel_file(video_file["id"], video_file["ext"])
-            video_filename_ext = video_file["ext"]
             video_filename = filename_for(video_file)
+            video_filename_ext = video_file["ext"]
 
         # prepare list of subtitles for template
         subtitles = []
@@ -321,25 +408,38 @@ class Kolibri2Zim:
         logs error in case of failure"""
         if future.cancelled():
             return
-        src_fpath, dst_fpath = self.videos_futures.get(future)
+        src_fname, dst_fpath, path = self.videos_futures.get(future)
 
         try:
             future.result()
         except Exception as exc:
-            logger.error(f"Error re-encoding {src_fpath.name}: {exc}")
+            logger.error(f"Error re-encoding {src_fname}: {exc}")
             logger.exception(exc)
             return
 
-        logger.debug(f"re-encoded {src_fpath.name} successfuly")
+        logger.debug(f"Re-encoded {src_fname} successfuly")
+
+        kwargs = {
+            "path": path,
+            "filepath": dst_fpath,
+            "mimetype": get_file_mimetype(dst_fpath),
+        }
+        # we shall request s3 upload on the threads pool, only once item has been
+        # added to ZIM so it can be removed altogether
+        if self.s3_storage:
+            kwargs.update({"callback": self.request_s3_upload_and_removal})
+
+        # simply add the item, autodeleting the file
+        else:
+            kwargs.update({"remove": True})
 
         with self.creator_lock:
-            self.creator.add_item_for(
-                path=dst_fpath.name,
-                fpath=dst_fpath,
-                delete_fpath=True,
-            )
+            self.creator.add_item(StaticItem(**kwargs))
+        logger.debug(f"Added {path} from re-encoded file")
 
-    def convert_and_add_video_aside(self, src_fpath, dest_fpath, preset):
+    def convert_and_add_video_aside(
+        self, file_id, src_fpath, src_checksum, dest_fpath, path, preset
+    ):
         """add video to the process-based convertion queue"""
 
         future = self.videos_executor.submit(
@@ -351,8 +451,26 @@ class Kolibri2Zim:
             with_process=False,
             failsafe=False,
         )
-        self.videos_futures.update({future: (src_fpath, dest_fpath)})
+        self.videos_futures.update({future: (src_fpath.name, dest_fpath, path)})
+        self.pending_upload.update(
+            {
+                path: (
+                    dest_fpath,
+                    self.s3_key_for(file_id, preset),
+                    {"checksum": src_checksum, "encoder_version": str(preset.VERSION)},
+                )
+            }
+        )
         future.add_done_callback(self.add_video_upon_completion)
+
+    def request_s3_upload_and_removal(self, item):
+        """ add file from item to uploads list """
+        path = item.path
+        del item
+        dest_fpath, key, meta = self.pending_upload.get(path)
+        # TODO: submit to a thread executor (to create) instead
+        # this is currently called on main-tread.
+        self.upload_to_s3(key, dest_fpath, **meta)
 
     def add_audio_node(self, node_id):
         """Add content from this `audio` node to zim
@@ -501,6 +619,15 @@ class Kolibri2Zim:
                 )
 
     def run(self):
+        if self.s3_url_with_credentials and not self.s3_credentials_ok():
+            raise ValueError("Unable to connect to Optimization Cache. Check its URL.")
+
+        s3_msg = (
+            f"  using cache: {self.s3_storage.url.netloc} "
+            f"with bucket: {self.s3_storage.bucket_name}"
+            if self.s3_storage
+            else ""
+        )
         logger.info(
             f"Starting scraper with:\n"
             f"  channel_id: {self.channel_id}\n"
@@ -508,6 +635,7 @@ class Kolibri2Zim:
             f"  output_dir: {self.output_dir}\n"
             f"  using webm : {self.use_webm}\n"
             f"  low_quality : {self.low_quality}\n"
+            f"{s3_msg}"
         )
 
         logger.info("Download database")
@@ -548,7 +676,8 @@ class Kolibri2Zim:
         self.add_local_files("assets", self.templates_dir.joinpath("assets"))
 
         # setup a dedicated queue for videos to convert
-        self.videos_futures = {}
+        self.videos_futures = {}  # future: src_fname, dst_fpath, path
+        self.pending_upload = {}  # path: filepath, key, checksum
         self.videos_executor = cf.ProcessPoolExecutor(max_workers=self.nb_processes)
 
         logger.info("Processing all nodes")
@@ -565,12 +694,31 @@ class Kolibri2Zim:
         # only awaits future completion and doesn't include callbacks
         self.videos_executor.shutdown()
 
-        # we shall check wether we completed successfuly or not and fail the scraper
-        # accordingly
+        # TODO: we shall check wether we completed successfuly or not
+        # and fail the scraper accordingly
 
         logger.info("Finishing ZIM file…")
         self.creator.finish()
-        logger.info("  done.")
+
+        if not self.keep_build_dir:
+            logger.info("Removing build folder")
+            shutil.rmtree(self.build_dir, ignore_errors=True)
+
+        logger.info("All done.")
+
+    def s3_credentials_ok(self):
+        logger.info("testing S3 Optimization Cache credentials")
+        self.s3_storage = KiwixStorage(self.s3_url_with_credentials)
+        if not self.s3_storage.check_credentials(
+            list_buckets=True, bucket=True, write=True, read=True, failsafe=True
+        ):
+            logger.error("S3 cache connection error testing permissions.")
+            logger.error(f"  Server: {self.s3_storage.url.netloc}")
+            logger.error(f"  Bucket: {self.s3_storage.bucket_name}")
+            logger.error(f"  Key ID: {self.s3_storage.params.get('keyid')}")
+            logger.error(f"  Public IP: {get_public_ip()}")
+            return False
+        return True
 
     def download_db(self):
         """download channel DB from kolibri and initialize DB
@@ -593,8 +741,8 @@ class Kolibri2Zim:
         period = datetime.datetime.now().strftime("%Y-%m")
         if self.fname:
             # make sure we were given a filename and not a path
-            self.fname = pathlib.Path(self.fname.format(period=period))
-            if pathlib.Path(self.fname.name) != self.fname:
+            self.fname = Path(self.fname.format(period=period))
+            if Path(self.fname.name) != self.fname:
                 raise ValueError(f"filename is not a filename: {self.fname}")
         else:
             self.fname = f"{self.name}_{period}.zim"

@@ -203,8 +203,9 @@ class KolibriDB:
 
     def get_node_files(self, node_id, thumbnail=False):
         for row in self.get_rows(
-            "SELECT local_file_id as id, extension as ext, priority as prio, "
-            "supplementary as supp, file_size as size, lang_id as lang, preset "
+            "SELECT id as fid, local_file_id as id, "
+            "extension as ext, priority as prio, "
+            "supplementary as supp, checksum, lang_id as lang, preset "
             "FROM content_file WHERE contentnode_id=? AND available=? AND thumbnail=? "
             "ORDER BY priority ASC",
             (node_id, 1, 1 if thumbnail else 0),
