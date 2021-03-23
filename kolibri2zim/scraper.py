@@ -672,7 +672,7 @@ class Kolibri2Zim:
         self.add_favicon()
 
         # add static files
-        logger.info("Adding local files (assests)")
+        logger.info("Adding local files (assets)")
         self.add_local_files("assets", self.templates_dir.joinpath("assets"))
 
         # setup a dedicated queue for videos to convert
@@ -780,4 +780,6 @@ class Kolibri2Zim:
             if favicon_mime != "image/png":
                 # should convert to PNG
                 logger.warning("we shall have converted that favicon to PNG")
-            self.creator.add_item_for("favicon.png", content=favicon_data)
+            self.creator.add_item_for(
+                "favicon.png", content=favicon_data, mimetype=favicon_mime
+            )
