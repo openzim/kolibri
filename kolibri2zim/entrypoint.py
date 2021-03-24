@@ -43,7 +43,9 @@ def main():
     )
 
     parser.add_argument(
-        "--favicon", help="URL for Favicon. Kolibri channel thumbnail otherwise"
+        "--favicon",
+        help="URL/path for Favicon. Kolibri channel thumbnail otherwise "
+        "or default Kolobri logo if missing",
     )
 
     parser.add_argument(
@@ -140,6 +142,13 @@ def main():
 
     parser.add_argument(
         "--debug", help="Enable verbose output", action="store_true", default=False
+    )
+
+    parser.add_argument(
+        "--only-topics",
+        help="Debug option to only handle topic nodes",
+        action="store_true",
+        default=False,
     )
 
     parser.add_argument(

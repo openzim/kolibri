@@ -52,6 +52,7 @@ options = [
     "tmp_dir",
     "s3_url_with_credentials",
     "favicon",
+    "only_topics",
 ]
 
 
@@ -130,6 +131,7 @@ class Kolibri2Zim:
         # debug/developer options
         self.keep_build_dir = go("keep_build_dir")
         self.debug = go("debug")
+        self.only_topics = go("only_topics")
 
         # jinja2 environment setup
         self.jinja2_env = jinja2.Environment(
@@ -182,6 +184,11 @@ class Kolibri2Zim:
         node_id, kind = item
         # check if we have a handler for this {kind} of node
         handler = getattr(self, f"add_{kind}_node", None)
+
+        # debug espace
+        if self.only_topics and kind != "topic":
+            return
+
         if handler:
             # add thumbnail to zim if there's one for this node
             thumbnail = self.db.get_node_thumbnail(node_id)
