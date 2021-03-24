@@ -20,6 +20,9 @@ from zimscraperlib.download import stream_file
 from zimscraperlib.zim.creator import Creator
 from zimscraperlib.zim.items import URLItem, StaticItem
 from zimscraperlib.i18n import find_language_names
+from zimscraperlib.inputs import handle_user_provided_file
+from zimscraperlib.image.convertion import convert_image, create_favicon
+from zimscraperlib.image.transformation import resize_image
 from zimscraperlib.filesystem import get_file_mimetype
 from zimscraperlib.video.presets import VideoWebmLow, VideoWebmHigh, VideoMp4Low
 from zimscraperlib.video.encoding import reencode
@@ -48,6 +51,7 @@ options = [
     "root_id",
     "tmp_dir",
     "s3_url_with_credentials",
+    "favicon",
 ]
 
 
@@ -107,6 +111,9 @@ class Kolibri2Zim:
         self.author = go("creator")
         self.publisher = go("publisher")
         self.name = go("name")
+
+        # customization
+        self.favicon = go("favicon")
 
         # directory setup
         self.output_dir = Path(go("output_dir")).expanduser().resolve()
@@ -766,20 +773,40 @@ class Kolibri2Zim:
         self.tags = list(set(self.tags + ["_category:other", "kolibri", "_videos:yes"]))
 
     def add_favicon(self):
-        # add channel thumbnail as favicon
-        try:
-            favicon_prefix, favicon_data = self.db.get_channel_metadata(
-                self.channel_id
-            )["thumbnail"].split(";base64,", 1)
-            favicon_data = base64.standard_b64decode(favicon_data)
-            favicon_mime = favicon_prefix.replace("data:", "")
-        except Exception as exc:
-            logger.warning(f"Unable to extract favicon from DB: {exc}")
-            logger.exception(exc)
+        favicon_orig = self.build_dir / "favicon"
+        # if user provided a custom favicon, retrieve that
+        if self.favicon:
+            handle_user_provided_file(source=self.favicon, dest=favicon_orig)
+        # otherwise, get thumbnail from database
         else:
-            if favicon_mime != "image/png":
-                # should convert to PNG
-                logger.warning("we shall have converted that favicon to PNG")
-            self.creator.add_item_for(
-                "favicon.png", content=favicon_data, mimetype=favicon_mime
-            )
+            # add channel thumbnail as favicon
+            try:
+                favicon_prefix, favicon_data = self.db.get_channel_metadata(
+                    self.channel_id
+                )["thumbnail"].split(";base64,", 1)
+                favicon_data = base64.standard_b64decode(favicon_data)
+                # favicon_mime = favicon_prefix.replace("data:", "")
+                with open(favicon_orig, "wb") as fh:
+                    fh.write(favicon_data)
+            except Exception as exc:
+                logger.warning("Unable to extract favicon from DB; using default")
+                logger.exception(exc)
+
+                # use a default favicon
+                handle_user_provided_file(
+                    source=self.templates_dir / "kolibri-logo.png", dest=favicon_orig
+                )
+
+        # convert to PNG (might already be PNG but it's OK)
+        favicon_path = favicon_orig.with_suffix(".png")
+        convert_image(favicon_orig, favicon_path)
+
+        # resize to appropriate size (ZIM uses 48x48)
+        resize_image(favicon_path, width=96, height=96, method="thumbnail")
+
+        # generate favicon
+        favicon_ico_path = favicon_path.with_suffix(".ico")
+        create_favicon(src=favicon_path, dst=favicon_ico_path)
+
+        self.creator.add_item_for("favicon.png", fpath=favicon_path)
+        self.creator.add_item_for("favicon.ico", fpath=favicon_ico_path)
