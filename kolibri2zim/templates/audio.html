@@ -19,6 +19,8 @@
 {% endblock %}
 
 {% block content %}
+{% include "node_meta.html" %}
+
 <audio
     class="video-js vjs-default-skin video-js-audio {% if not thumbnail %}no-thumbnail{% endif %}"
     {% if thumbnail %}poster="{{ thumbnail }}"{% endif %}

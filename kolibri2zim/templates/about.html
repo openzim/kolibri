@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block content %}
+{% if content %}
+{{ content|safe }}
+{% else %}
+<h1>About {{ title }}</h1>
+<p>{{ description }}</p>
+{% if author %}<p>Created by {{ author }}</p>{% endif %}
+{% if last_updated %}<p>Updated on {{ last_updated }}</p>{% endif %}
+<p class="text-center"><img src="./favicon.png" /></p>
+{% endif %}
+{% endblock %}
+
+{% block footer %}{% endblock %}

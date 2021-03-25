@@ -14,6 +14,7 @@ from pathlib import Path
 import concurrent.futures as cf
 
 import jinja2
+from bs4 import BeautifulSoup
 from pif import get_public_ip
 from kiwixstorage import KiwixStorage
 from zimscraperlib.download import stream_file
@@ -53,6 +54,8 @@ options = [
     "s3_url_with_credentials",
     "favicon",
     "only_topics",
+    "about",
+    "css",
 ]
 
 
@@ -115,6 +118,8 @@ class Kolibri2Zim:
 
         # customization
         self.favicon = go("favicon")
+        self.about = go("about")
+        self.css = go("css")
 
         # directory setup
         self.output_dir = Path(go("output_dir")).expanduser().resolve()
@@ -684,6 +689,7 @@ class Kolibri2Zim:
             tags=";".join(self.tags),
         ).start()
         self.add_favicon()
+        self.add_custom_about_and_css()
 
         # add static files
         logger.info("Adding local files (assets)")
@@ -795,6 +801,7 @@ class Kolibri2Zim:
                 # favicon_mime = favicon_prefix.replace("data:", "")
                 with open(favicon_orig, "wb") as fh:
                     fh.write(favicon_data)
+                del favicon_data
             except Exception as exc:
                 logger.warning("Unable to extract favicon from DB; using default")
                 logger.exception(exc)
@@ -805,15 +812,64 @@ class Kolibri2Zim:
                 )
 
         # convert to PNG (might already be PNG but it's OK)
-        favicon_path = favicon_orig.with_suffix(".png")
-        convert_image(favicon_orig, favicon_path)
+        favicon_fpath = favicon_orig.with_suffix(".png")
+        convert_image(favicon_orig, favicon_fpath)
 
         # resize to appropriate size (ZIM uses 48x48)
-        resize_image(favicon_path, width=96, height=96, method="thumbnail")
+        resize_image(favicon_fpath, width=96, height=96, method="thumbnail")
 
         # generate favicon
-        favicon_ico_path = favicon_path.with_suffix(".ico")
-        create_favicon(src=favicon_path, dst=favicon_ico_path)
+        favicon_ico_path = favicon_fpath.with_suffix(".ico")
+        create_favicon(src=favicon_fpath, dst=favicon_ico_path)
 
-        self.creator.add_item_for("favicon.png", fpath=favicon_path)
+        self.creator.add_item_for("favicon.png", fpath=favicon_fpath)
         self.creator.add_item_for("favicon.ico", fpath=favicon_ico_path)
+
+    def add_custom_about_and_css(self):
+        channel_meta = self.db.get_channel_metadata(self.channel_id)
+
+        if self.about:
+            # if user provided a custom about page, use it
+            with open(
+                handle_user_provided_file(
+                    source=self.about, in_dir=self.build_dir, nocopy=True
+                ),
+                "r",
+            ) as fh:
+                soup = BeautifulSoup(fh.read(), "lxml")
+                title = soup.find("title").text
+                content = soup.select("body > .container")
+                # we're only interested in the first one
+                if isinstance(content, list):
+                    content = content[0]
+        else:
+            title = channel_meta["name"]
+            content = None
+
+        html = self.jinja2_env.get_template("about.html").render(
+            title=title, content=content, **channel_meta
+        )
+        with self.creator_lock:
+            self.creator.add_item_for(
+                path="about",
+                title=title,
+                content=html,
+                mimetype="text/html",
+            )
+        del html
+
+        # if user provided a custom CSS file, use it
+        if self.css:
+            with open(
+                handle_user_provided_file(
+                    source=self.css, in_dir=self.build_dir, nocopy=True
+                ),
+                "r",
+            ) as fh:
+                content = fh.read()
+        # otherwise, create a blank one
+        else:
+            content = ""
+
+        self.creator.add_item_for("custom.css", content=content, mimetype="text/css")
+        logger.debug("Added about page and custom CSS")

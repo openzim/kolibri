@@ -27,6 +27,8 @@ iframe {
 {% endblock %}
 
 {% block content %}
+{% include "node_meta.html" %}
+
 <ul class="nav nav-tabs">
 <li class="nav-item">
   <a class="nav-link{% if not is_alt %} active{% endif %}" {% if not is_alt %} aria-current="page"{% endif %} href="{{ node_id }}">Main document ({{ main_document_ext|upper }})</a>

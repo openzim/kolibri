@@ -7,10 +7,11 @@
 {% endblock %}
 
 {% block content %}
+{% include "node_meta.html" %}
+
 {% if children_count %}
 <div class="children">
   <div class="row">
-    
     {% for child in children %}
     {% if child.kind != 'exercise' %}
     <div class="mb-4 col-sm-3">

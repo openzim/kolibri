@@ -11,6 +11,7 @@
   <link href="./assets/bootstrap/bootstrap.min.css" rel="stylesheet">
   <link href="./assets/bootstrap-icons/bootstrap-icons.css" rel="stylesheet" />
   {% block head %}{% endblock %}
+  <link href="./custom.css" rel="stylesheet" />
 </head>
 <body>
   <div class="container">
@@ -25,10 +26,13 @@
     </nav>
     {% endif %}
 
-    <h1>{{ title }}</h1>
-    {% if description %}<p>{{ description }}</p>{% endif %}
-
     {% block content %}{% endblock %}
+
+    {% block footer %}
+    <footer class="text-center">
+      <p><a href="./about">About this content</a></p>
+    </footer>
+    {% endblock %}
   </div>
 <script src="./assets/bootstrap/bootstrap.bundle.min.js"></script>
 {% block script %}{% endblock %}

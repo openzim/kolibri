@@ -49,6 +49,21 @@ def main():
     )
 
     parser.add_argument(
+        "--about",
+        help="URL/path to a single HTML file to use as an about page. "
+        "Place everythong inside `body .container` (including stylesheets and scripts) "
+        "as only this and your <title> will be merged into the actual about page. "
+        "Remember to include images inline using data URL.",
+    )
+
+    parser.add_argument(
+        "--css",
+        help="URL/path to a single CSS file to be included in all pages "
+        "(but not on kolibri-html-content ones). "
+        "Inlude external resources using data URL.",
+    )
+
+    parser.add_argument(
         "--creator",
         help="Name of content creator. Kolibri channel author or “Kolibri” otherwise",
     )
