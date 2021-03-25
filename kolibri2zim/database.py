@@ -163,6 +163,7 @@ class KolibriDB:
     def get_node(self, node_id, with_parents=False, with_children=False):
         node = self.get_row(
             "SELECT id, title, description, author, level, kind, "
+            "license_name as license, license_owner, "
             "lft as left, rght as right "
             "FROM content_contentnode WHERE id=?",
             (node_id,),

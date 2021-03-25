@@ -284,13 +284,7 @@ class Kolibri2Zim:
         node = self.db.get_node(node_id, with_parents=True, with_children=True)
 
         html = self.jinja2_env.get_template("topic.html").render(
-            node_id=node_id,
-            title=node["title"],
-            author=node["author"],
-            children=node["children"],
-            children_count=node["children_count"],
-            parents=node["parents"],
-            parents_count=node["parents_count"],
+            node_id=node_id, **node
         )
         with self.creator_lock:
             self.creator.add_item_for(
@@ -404,14 +398,12 @@ class Kolibri2Zim:
         node = self.db.get_node(node_id, with_parents=True)
         html = self.jinja2_env.get_template("video.html").render(
             node_id=node_id,
-            parents=node["parents"],
-            parents_count=node["parents_count"],
             video_filename=video_filename,
             video_filename_ext=video_filename_ext,
-            title=node["title"],
             subtitles=sorted(subtitles, key=lambda i: i["code"]),
             thumbnail=self.db.get_thumbnail_name(node_id),
             autoplay=self.autoplay,
+            **node,
         )
         with self.creator_lock:
             self.creator.add_item_for(
@@ -503,13 +495,11 @@ class Kolibri2Zim:
         node = self.db.get_node(node_id, with_parents=True)
         html = self.jinja2_env.get_template("audio.html").render(
             node_id=node_id,
-            parents=node["parents"],
-            parents_count=node["parents_count"],
             filename=filename_for(file),
             ext=file["ext"],
-            title=node["title"],
             thumbnail=self.db.get_thumbnail_name(node_id),
             autoplay=self.autoplay,
+            **node,
         )
         with self.creator_lock:
             self.creator.add_item_for(
@@ -592,10 +582,8 @@ class Kolibri2Zim:
                 alt_document=filename_for(alt_document) if alt_document else None,
                 alt_document_ext=alt_document["ext"] if alt_document else None,
                 target=target_for(alt_document if is_alt else main_document),
-                title=node["title"],
-                parents=node["parents"],
-                parents_count=node["parents_count"],
                 is_alt=is_alt,
+                **node,
             )
             with self.creator_lock:
                 path = node_id
