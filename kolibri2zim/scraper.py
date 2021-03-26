@@ -71,22 +71,6 @@ def get_kolibri_url_for(file_id: str, ext: str):
     return f"{STUDIO_URL}/content/storage/{remote_path}", fname
 
 
-def worker_wrapper(func, chain, *args):
-    """ wraps a worker-func for a task queue """
-    while True:
-        try:
-            param = chain.get()
-        except queue.Empty:
-            return
-        try:
-            func(param, *args)
-        except Exception as exc:
-            logger.error(f"Error in worker: {exc}")
-            logger.exception(exc)
-        finally:
-            chain.task_done()
-
-
 class Kolibri2Zim:
     def __init__(self, **kwargs):
 
@@ -161,28 +145,19 @@ class Kolibri2Zim:
             else:
                 self.add_local_files(path, fpath)
 
-    def process_all_nodes(self, nb_threads):
-        """Loop on content nodes to create zim entries from kolibri DB
+    def populate_nodes_executor(self):
+        """Loop on content nodes to create zim entries from kolibri DB"""
 
-        this is a blocking step that uses nb_threads"""
-        q = queue.Queue()
+        def schedule_node(item):
+            future = self.nodes_executor.submit(self.add_node, item=item)
+            self.nodes_futures.update({future: item[0]})
 
-        # add root node
-        q.put_nowait((self.db.root["id"], self.db.root["kind"]))
+        # schedule root-id
+        schedule_node((self.db.root["id"], self.db.root["kind"]))
 
         # fill queue with (node_id, kind) tuples for all root node's descendants
         for node in self.db.get_node_descendants(self.root_id):
-            q.put_nowait((node["id"], node["kind"]))
-
-        # create {nb_threads} threads to consume and process the queue via .add_node()
-        for _ in range(nb_threads):
-            threading.Thread(
-                target=worker_wrapper,
-                args=(self.add_node, q),
-                daemon=True,
-            ).start()
-
-        q.join()
+            schedule_node((node["id"], node["kind"]))
 
     def add_node(self, item):
         """ process a content node from the tuple in queue """
@@ -676,43 +651,62 @@ class Kolibri2Zim:
             name=self.name,
             tags=";".join(self.tags),
         ).start()
-        self.add_favicon()
-        self.add_custom_about_and_css()
 
-        # add static files
-        logger.info("Adding local files (assets)")
-        self.add_local_files("assets", self.templates_dir.joinpath("assets"))
+        succeeded = False
+        try:
+            self.add_favicon()
+            self.add_custom_about_and_css()
 
-        # setup a dedicated queue for videos to convert
-        self.videos_futures = {}  # future: src_fname, dst_fpath, path
-        self.pending_upload = {}  # path: filepath, key, checksum
-        self.videos_executor = cf.ProcessPoolExecutor(max_workers=self.nb_processes)
+            # add static files
+            logger.info("Adding local files (assets)")
+            self.add_local_files("assets", self.templates_dir.joinpath("assets"))
 
-        logger.info("Processing all nodes")
-        self.process_all_nodes(self.nb_threads)
-        logger.info("Processed all nodes.")
+            # setup queue for nodes processing
+            self.nodes_futures = {}  # future: node_id
+            self.nodes_executor = cf.ThreadPoolExecutor(max_workers=self.nb_threads)
 
-        # await completion of the videos queue
-        if self.videos_futures:
-            nb_incomplete = sum([1 for f in self.videos_futures if f.running()])
-            logger.info(f"Awaiting {nb_incomplete} video convertions to complete…")
-        cf.wait(self.videos_futures.keys(), return_when=cf.FIRST_EXCEPTION)
-        # properly shutting down the executor should allow processing
-        # futures's callbacks (zim addition) as the wait() function
-        # only awaits future completion and doesn't include callbacks
-        self.videos_executor.shutdown()
+            # setup a dedicated queue for videos to convert
+            self.videos_futures = {}  # future: src_fname, dst_fpath, path
+            self.pending_upload = {}  # path: filepath, key, checksum
+            self.videos_executor = cf.ProcessPoolExecutor(max_workers=self.nb_processes)
 
-        # TODO: we shall check wether we completed successfuly or not
-        # and fail the scraper accordingly
+            logger.info("Starting nodes processing")
+            self.populate_nodes_executor()
 
-        logger.info("Finishing ZIM file…")
-        self.creator.finish()
+            # await completion of all futures (nodes and videos)
+            result = cf.wait(
+                self.videos_futures.keys() | self.nodes_futures.keys(),
+                return_when=cf.FIRST_EXCEPTION,
+            )
+            self.nodes_executor.shutdown()
+            # properly shutting down the executor should allow processing
+            # futures's callbacks (zim addition) as the wait() function
+            # only awaits future completion and doesn't include callbacks
+            self.videos_executor.shutdown()
+
+            succeeded = not result.not_done
+        except KeyboardInterrupt:
+            self.creator.can_finish = False
+            logger.error("KeyboardInterrupt, exiting.")
+        except Exception as exc:
+            # request Creator not to create a ZIM file on finish
+            self.creator.can_finish = False
+            logger.error("Interrupting process due to error: {exc}")
+            logger.exception(exc)
+        finally:
+            if succeeded:
+                logger.info("Finishing ZIM file…")
+            # we need to release libzim's resources.
+            # currently does nothing but crash if can_finish=False but that's awaiting
+            # impl. at libkiwix level
+            with self.creator_lock:
+                self.creator.finish()
 
         if not self.keep_build_dir:
             logger.info("Removing build folder")
             shutil.rmtree(self.build_dir, ignore_errors=True)
 
-        logger.info("All done.")
+        return 0 if succeeded else 1
 
     def s3_credentials_ok(self):
         logger.info("testing S3 Optimization Cache credentials")

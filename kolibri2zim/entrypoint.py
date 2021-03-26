@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
+import sys
 import argparse
 
 from .constants import NAME, SCRAPER, Global, getLogger, setDebug
@@ -181,7 +182,7 @@ def main():
 
     try:
         scraper = Kolibri2Zim(**dict(args._get_kwargs()))
-        scraper.run()
+        sys.exit(scraper.run())
     except Exception as exc:
         logger.error(f"FAILED. An error occurred: {exc}")
         if args.debug:
