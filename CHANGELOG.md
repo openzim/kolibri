@@ -8,3 +8,5 @@
 - multi-processed for media convertion (CPU bound)
 - supports scraping from any node in channel
 - added S3 optimization cache support
+- supports custom about page, favicon and CSS
+- supports scraping from any topic node
