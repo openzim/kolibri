@@ -691,7 +691,7 @@ class Kolibri2Zim:
         except Exception as exc:
             # request Creator not to create a ZIM file on finish
             self.creator.can_finish = False
-            logger.error("Interrupting process due to error: {exc}")
+            logger.error(f"Interrupting process due to error: {exc}")
             logger.exception(exc)
         finally:
             if succeeded:
