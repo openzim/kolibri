@@ -483,6 +483,7 @@ class Kolibri2Zim:
                 content=html,
                 mimetype="text/html",
             )
+        logger.debug(f"Added audio #{node_id}")
 
     def add_exercise_node(self, node_id):
         """Add content from this `exercise` node to zim
@@ -570,6 +571,7 @@ class Kolibri2Zim:
                     content=html,
                     mimetype="text/html",
                 )
+        logger.debug(f"Added document #{node_id}")
 
     def add_html5_node(self, node_id):
         """Add content from this `html5` node to zim
@@ -599,6 +601,7 @@ class Kolibri2Zim:
                     path=f"{node_id}/{ark_member}",
                     content=zip_ark.open(ark_member).read(),
                 )
+        logger.debug(f"Added HTML5 node #{node_id}")
 
     def run(self):
         if self.s3_url_with_credentials and not self.s3_credentials_ok():
