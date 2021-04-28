@@ -10,6 +10,7 @@ import zipfile
 import datetime
 import tempfile
 import threading
+import hashlib
 from pathlib import Path
 import concurrent.futures as cf
 
@@ -116,6 +117,7 @@ class Kolibri2Zim:
         self.nb_processes = go("processes")
         self.s3_url_with_credentials = go("s3_url_with_credentials")
         self.s3_storage = None
+        self.file_cache = dict()
 
         # debug/developer options
         self.keep_build_dir = go("keep_build_dir")
@@ -596,11 +598,34 @@ class Kolibri2Zim:
         # loop over zip members and create an entry for each
         zip_ark = zipfile.ZipFile(ark_data)
         for ark_member in zip_ark.namelist():
-            with self.creator_lock:
-                self.creator.add_item_for(
-                    path=f"{node_id}/{ark_member}",
-                    content=zip_ark.open(ark_member).read(),
-                )
+            filename_hash = hashlib.md5(ark_member.encode('utf-8')).hexdigest()
+            content = zip_ark.open(ark_member).read()
+            content_hash = hashlib.md5(content).hexdigest()
+            
+            if filename_hash not in self.file_cache:
+                self.file_cache[filename_hash] = content_hash
+                with self.creator_lock:
+                    self.creator.add_item_for(
+                        path=f"html5_files/{ark_member}",
+                        content=content,
+                    )
+                    self.creator.add_redirect(
+                        path=f"{node_id}/{ark_member}",
+                        target_path=f"html5_files/{ark_member}"
+                    )
+            else:
+                if self.file_cache[filename_hash] == content_hash:
+                    with self.creator_lock:
+                        self.creator.add_redirect(
+                            path=f"{node_id}/{ark_member}",
+                            target_path=f"html5_files/{ark_member}"
+                        )
+                else:
+                    with self.creator_lock:
+                        self.creator.add_item_for(
+                            path=f"{node_id}/{ark_member}",
+                            content=content,
+                        )
         logger.debug(f"Added HTML5 node #{node_id}")
 
     def run(self):
