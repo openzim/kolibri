@@ -157,6 +157,16 @@ def main():
     )
 
     parser.add_argument(
+        "--dedup-html-files",
+        help="Deduplicates in-HTML5 App files by adding each only once and creating "
+        "redirects. Usefull for channel with duplicated files (assets) in app. "
+        "Caution: can break links if HTML5 app is not completely flat",
+        dest="dedup_html_files",
+        default=False,
+        action="store_true",
+    )
+
+    parser.add_argument(
         "--debug", help="Enable verbose output", action="store_true", default=False
     )
 

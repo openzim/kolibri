@@ -3,7 +3,6 @@
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 import io
-import queue
 import shutil
 import base64
 import zipfile
@@ -57,6 +56,7 @@ options = [
     "only_topics",
     "about",
     "css",
+    "dedup_html_files",
 ]
 
 
@@ -117,7 +117,8 @@ class Kolibri2Zim:
         self.nb_processes = go("processes")
         self.s3_url_with_credentials = go("s3_url_with_credentials")
         self.s3_storage = None
-        self.file_cache = dict()
+        self.dedup_html_files = go("dedup_html_files")
+        self.html_files_cache = []
 
         # debug/developer options
         self.keep_build_dir = go("keep_build_dir")
@@ -595,37 +596,36 @@ class Kolibri2Zim:
         ark_data = io.BytesIO()
         stream_file(url=ark_url, byte_stream=ark_data)
 
-        # loop over zip members and create an entry for each
+        # loop over zip members and create an entry (or redir. for each if using dedup)
         zip_ark = zipfile.ZipFile(ark_data)
         for ark_member in zip_ark.namelist():
-            filename_hash = hashlib.md5(ark_member.encode('utf-8')).hexdigest()
-            content = zip_ark.open(ark_member).read()
-            content_hash = hashlib.md5(content).hexdigest()
-            
-            if filename_hash not in self.file_cache:
-                self.file_cache[filename_hash] = content_hash
+            if not self.dedup_html_files:
                 with self.creator_lock:
                     self.creator.add_item_for(
-                        path=f"html5_files/{ark_member}",
+                        path=f"{node_id}/{ark_member}",
+                        content=zip_ark.open(ark_member).read(),
+                    )
+                continue
+
+            # calculate hash of file and add entry if not in zim already
+            content = zip_ark.open(ark_member).read()
+            content_hash = hashlib.md5(content).hexdigest()  # nosec
+
+            if content_hash not in self.html_files_cache:
+                self.html_files_cache.append(content_hash)
+                with self.creator_lock:
+                    self.creator.add_item_for(
+                        path=f"html5_files/{content_hash}",
                         content=content,
                     )
-                    self.creator.add_redirect(
-                        path=f"{node_id}/{ark_member}",
-                        target_path=f"html5_files/{ark_member}"
-                    )
-            else:
-                if self.file_cache[filename_hash] == content_hash:
-                    with self.creator_lock:
-                        self.creator.add_redirect(
-                            path=f"{node_id}/{ark_member}",
-                            target_path=f"html5_files/{ark_member}"
-                        )
-                else:
-                    with self.creator_lock:
-                        self.creator.add_item_for(
-                            path=f"{node_id}/{ark_member}",
-                            content=content,
-                        )
+
+            # add redirect to the unique sum-based entry for that file's path
+            with self.creator_lock:
+                self.creator.add_redirect(
+                    path=f"{node_id}/{ark_member}",
+                    target_path=f"html5_files/{content_hash}"
+                )
+
         logger.debug(f"Added HTML5 node #{node_id}")
 
     def run(self):

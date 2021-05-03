@@ -10,3 +10,4 @@
 - added S3 optimization cache support
 - supports custom about page, favicon and CSS
 - supports scraping from any topic node
+- support basic deduplication of files upon request
