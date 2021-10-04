@@ -86,6 +86,14 @@ mv icons-1.4.0/font $ASSETS_PATH/bootstrap-icons
 rm -rf icons-1.4.0
 rm -f v1.4.0.zip
 
+echo "getting perseus renderer"
+curl -L -O https://github.com/imnitishng/standalone-perseus/archive/refs/tags/v1.1.3.zip
+rm -rf $ASSETS_PATH/perseus
+unzip -o v1.1.3.zip
+mkdir -p $ASSETS_PATH/perseus
+mv standalone-perseus-1.1.3/* $ASSETS_PATH/perseus
+rm -rf standalone-perseus-1.1.3/
+rm -f v1.1.3.zip
 
 if command -v fix_ogvjs_dist > /dev/null; then
     echo "fixing JS files"

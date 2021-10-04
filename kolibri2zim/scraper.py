@@ -3,6 +3,7 @@
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 import io
+import os
 import shutil
 import base64
 import zipfile
@@ -10,6 +11,7 @@ import datetime
 import tempfile
 import threading
 import hashlib
+import json
 from pathlib import Path
 import concurrent.futures as cf
 
@@ -492,12 +494,55 @@ class Kolibri2Zim:
         """Add content from this `exercise` node to zim
 
         exercise node is composed of a single perseus file
-
         a perseus file is a ZIP containing an exercise.json entrypoint and other files
+        we extract and add the individual exercises as standalone HTML files dependent on
+        perseus reader from https://github.com/Khan/perseus"""
 
-        we'd solely add the perseus file in the ZIM along with the perseus reader from
-        https://github.com/Khan/perseus"""
-        logger.warning(f"[NOT SUPPORTED] not adding exercice node {node_id}")
+        files = self.db.get_node_files(node_id, thumbnail=False)
+        files = sorted(files, key=lambda f: f["prio"])
+        it = filter(lambda f: f["supp"] == 0, files)
+
+        perseus_file = next(it)
+        perseus_url, perseus_name = get_kolibri_url_for(perseus_file['id'], perseus_file['ext'])
+        perseus_data = io.BytesIO()
+        stream_file(url=perseus_url, byte_stream=perseus_data)
+        zip_ark = zipfile.ZipFile(perseus_data)
+
+        for ark_member in zip_ark.namelist():
+            if ark_member == 'exercise.json':
+                exercise_content = json.loads(zip_ark.open(ark_member).read())
+                assessment_items_content = []
+                assessment_items_count = len(exercise_content['all_assessment_items'])
+                if exercise_content.get('all_assessment_items', None):
+                    for assessment_item in exercise_content['all_assessment_items']:
+                        if f'{assessment_item}.json' in zip_ark.namelist():
+                            perseus_content = zip_ark.open(f'{assessment_item}.json').read().decode('utf-8')
+                            perseus_content = perseus_content.replace(
+                                r'web+graphie:${☣ LOCALPATH}',
+                                f'web+graphie:{perseus_file["id"]}'
+                            )
+                            perseus_content = perseus_content.replace(
+                                r'${☣ LOCALPATH}',
+                                f'/{perseus_file["id"]}'
+                            )
+                            assessment_items_content.append(perseus_content)
+
+                    assessment_items_content_str = '[' + ', '.join(assessment_items_content) + ']'
+                    node = self.db.get_node(node_id, with_parents=True)
+                    html = self.jinja2_env.get_template("perseus_exercise.html").render(
+                        node_id=node_id,
+                        perseus_content = assessment_items_content_str,
+                        questions_count = str(assessment_items_count),
+                        **node
+                    )
+                    with self.creator_lock:
+                        self.creator.add_item_for(
+                            path=node_id,
+                            title=node["title"],
+                            content=html,
+                            mimetype="text/html"
+                        )
+        logger.debug(f'Added exercise node #{node_id}')
 
     def add_document_node(self, node_id):
         """Add content from this `document` node to zim
@@ -683,7 +728,7 @@ class Kolibri2Zim:
         succeeded = False
         try:
             self.add_favicon()
-            self.add_custom_about_and_css()
+            # self.add_custom_about_and_css()
 
             # add static files
             logger.info("Adding local files (assets)")
