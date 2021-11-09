@@ -74,6 +74,10 @@ def get_kolibri_url_for(file_id: str, ext: str):
     return f"{STUDIO_URL}/content/storage/{remote_path}", fname
 
 
+def read_from_zip(ark, member):
+    return ark.open(member).read().decode("utf-8")
+
+
 class Kolibri2Zim:
     def __init__(self, **kwargs):
 
@@ -493,55 +497,61 @@ class Kolibri2Zim:
     def add_exercise_node(self, node_id):
         """Add content from this `exercise` node to zim
 
-        exercise node is composed of a single perseus file
+        exercise node is composed of a single perseus file.
         a perseus file is a ZIP containing an exercise.json entrypoint and other files
-        we extract and add the individual exercises as standalone HTML files dependent on
-        perseus reader from https://github.com/Khan/perseus"""
+        we extract and add the individual exercises as standalone HTML files dependent
+        on standalone version of perseus reader from https://github.com/Khan/perseus"""
 
         files = self.db.get_node_files(node_id, thumbnail=False)
+        if not files:
+            return
         files = sorted(files, key=lambda f: f["prio"])
         it = filter(lambda f: f["supp"] == 0, files)
 
         perseus_file = next(it)
-        perseus_url, perseus_name = get_kolibri_url_for(perseus_file['id'], perseus_file['ext'])
+        perseus_url, perseus_name = get_kolibri_url_for(
+            perseus_file["id"], perseus_file["ext"])
         perseus_data = io.BytesIO()
         stream_file(url=perseus_url, byte_stream=perseus_data)
         zip_ark = zipfile.ZipFile(perseus_data)
 
-        for ark_member in zip_ark.namelist():
-            if ark_member == 'exercise.json':
-                exercise_content = json.loads(zip_ark.open(ark_member).read())
-                assessment_items_content = []
-                assessment_items_count = len(exercise_content['all_assessment_items'])
-                if exercise_content.get('all_assessment_items', None):
-                    for assessment_item in exercise_content['all_assessment_items']:
-                        if f'{assessment_item}.json' in zip_ark.namelist():
-                            perseus_content = zip_ark.open(f'{assessment_item}.json').read().decode('utf-8')
-                            perseus_content = perseus_content.replace(
-                                r'web+graphie:${☣ LOCALPATH}',
-                                f'web+graphie:{perseus_file["id"]}'
-                            )
-                            perseus_content = perseus_content.replace(
-                                r'${☣ LOCALPATH}',
-                                f'/{perseus_file["id"]}'
-                            )
-                            assessment_items_content.append(perseus_content)
+        manifest_name = "exercise.json"
+        if manifest_name not in zip_ark.namelist():
+            logger.error(f"Excercise node without {manifest_name}")
+            return
 
-                    assessment_items_content_str = '[' + ', '.join(assessment_items_content) + ']'
-                    node = self.db.get_node(node_id, with_parents=True)
-                    html = self.jinja2_env.get_template("perseus_exercise.html").render(
-                        node_id=node_id,
-                        perseus_content = assessment_items_content_str,
-                        questions_count = str(assessment_items_count),
-                        **node
-                    )
-                    with self.creator_lock:
-                        self.creator.add_item_for(
-                            path=node_id,
-                            title=node["title"],
-                            content=html,
-                            mimetype="text/html"
-                        )
+        manifest = json.loads(read_from_zip(zip_ark, manifest_name))
+        assessment_items = []
+
+        for assessment_item in manifest.get("all_assessment_items", []):
+            item_path = f"{assessment_item}.json"
+            if item_path in zip_ark.namelist():
+                perseus_content = read_from_zip(zip_ark, item_path)
+                perseus_content = perseus_content.replace(
+                    r"web+graphie:${☣ LOCALPATH}",
+                    f'web+graphie:{perseus_file["id"]}'
+                )
+                perseus_content = perseus_content.replace(
+                    r"${☣ LOCALPATH}",
+                    f'/{perseus_file["id"]}'
+                )
+            assessment_items.append(perseus_content)
+
+        perseus_content = f"[{', '.join(assessment_items)}]"
+        node = self.db.get_node(node_id, with_parents=True)
+        html = self.jinja2_env.get_template("perseus_exercise.html").render(
+            node_id=node_id,
+            perseus_content=perseus_content,
+            questions_count=str(len(assessment_items)),
+            **node
+        )
+        with self.creator_lock:
+            self.creator.add_item_for(
+                path=node_id,
+                title=node["title"],
+                content=html,
+                mimetype="text/html"
+            )
         logger.debug(f'Added exercise node #{node_id}')
 
     def add_document_node(self, node_id):
@@ -728,7 +738,7 @@ class Kolibri2Zim:
         succeeded = False
         try:
             self.add_favicon()
-            # self.add_custom_about_and_css()
+            self.add_custom_about_and_css()
 
             # add static files
             logger.info("Adding local files (assets)")
