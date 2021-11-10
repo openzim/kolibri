@@ -433,14 +433,14 @@
       <div class="loader-container">
         <p v-show="loading" :delay="false" type="indeterminate"> Loading </p>
       </div>
-      
+
       <div id="problem-area" :dir="contentDirection()">
         <div id="workarea" style="margin-left: 0"></div>
       </div>
 
       <div id="hintsarea" :dir="contentDirection()" style="margin-left: 0"></div>
 
-      <div style="clear: both;"></div>      
+      <div style="clear: both;"></div>
     </div>
 
     <div id="answer-area-wrap" :dir="contentDirection()" style="background-color: white;">
@@ -455,7 +455,7 @@
                     Question: {{ questionIndex+1 }} / {{ maxQuestionIndex }}
                   </div>
                 </div>
-       
+
                 <div v-if="messageType != 'blank'" v-bind:class="[messageType == 'error' ? 'red-alert-backgroud' : 'green-alert-backgroud']">
                   <span :class="[messageType == 'error' ? 'red-alert-text' : 'green-alert-text']">
                     {{ message }}
@@ -474,7 +474,7 @@
                   @click="takeHint">
                   Take Hint
                 </button>
-        
+
                 <button
                   v-else
                   class="interactive-btn dead-btn"
@@ -482,7 +482,7 @@
                   :primary="false"
                   :disabled="true">
                   No more hints available
-                </button>        
+                </button>
               </div>
               <button
                 class="interactive-btn checkanswer-btn"
@@ -500,7 +500,7 @@
                 v-show="nextQuestionToggle">
                 Next Question
               </button>
-        
+
             </div>
           </div>
         </div>
@@ -512,7 +512,7 @@
     id="scratchpad-show"
     :primary="false"
     :raised="false">
-      Kbutton if scratchpad  
+      Kbutton if scratchpad
     </button>
     <button
       v-else
@@ -520,7 +520,7 @@
       :primary="false"
       :raised="false"
       disabled>
-      KButton else 
+      KButton else
     </button>
 
     <div id="perseus-container" ref="perseusContainer"></div>

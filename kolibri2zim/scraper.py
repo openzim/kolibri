@@ -3,7 +3,6 @@
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 import io
-import os
 import shutil
 import base64
 import zipfile
@@ -13,6 +12,7 @@ import threading
 import hashlib
 import json
 from pathlib import Path
+from typing import Optional
 import concurrent.futures as cf
 
 import jinja2
@@ -74,8 +74,9 @@ def get_kolibri_url_for(file_id: str, ext: str):
     return f"{STUDIO_URL}/content/storage/{remote_path}", fname
 
 
-def read_from_zip(ark, member):
-    return ark.open(member).read().decode("utf-8")
+def read_from_zip(ark, member, as_text: Optional[bool] = True):
+    data = ark.open(member).read()
+    return data.decode("utf-8") if as_text else data
 
 
 class Kolibri2Zim:
@@ -502,46 +503,63 @@ class Kolibri2Zim:
         we extract and add the individual exercises as standalone HTML files dependent
         on standalone version of perseus reader from https://github.com/Khan/perseus"""
 
+        # find perseus file (should be a single one)
         files = self.db.get_node_files(node_id, thumbnail=False)
         if not files:
             return
         files = sorted(files, key=lambda f: f["prio"])
-        it = filter(lambda f: f["supp"] == 0, files)
+        perseus_file = next(filter(lambda f: f["supp"] == 0, files))
 
-        perseus_file = next(it)
+        # download persus file
         perseus_url, perseus_name = get_kolibri_url_for(
             perseus_file["id"], perseus_file["ext"])
         perseus_data = io.BytesIO()
         stream_file(url=perseus_url, byte_stream=perseus_data)
-        zip_ark = zipfile.ZipFile(perseus_data)
 
+        # read JSON manifest from perseus file
+        zip_ark = zipfile.ZipFile(perseus_data)
         manifest_name = "exercise.json"
         if manifest_name not in zip_ark.namelist():
             logger.error(f"Excercise node without {manifest_name}")
             return
-
         manifest = json.loads(read_from_zip(zip_ark, manifest_name))
-        assessment_items = []
 
+        # copy exercise content, rewriting internal paths
+        # all internal resources to be stored under {node_id}/ prefix
+        assessment_items = []
         for assessment_item in manifest.get("all_assessment_items", []):
             item_path = f"{assessment_item}.json"
             if item_path in zip_ark.namelist():
                 perseus_content = read_from_zip(zip_ark, item_path)
                 perseus_content = perseus_content.replace(
                     r"web+graphie:${☣ LOCALPATH}",
-                    f'web+graphie:{perseus_file["id"]}'
+                    f'web+graphie:./{node_id}'
                 )
                 perseus_content = perseus_content.replace(
                     r"${☣ LOCALPATH}",
-                    f'/{perseus_file["id"]}'
+                    f'./{node_id}'
                 )
             assessment_items.append(perseus_content)
 
-        perseus_content = f"[{', '.join(assessment_items)}]"
+        # add all support files to ZIM
+        for ark_member in zip_ark.namelist():
+            if ark_member == manifest_name:
+                continue
+
+            path = f"{node_id}/{ark_member}"
+            with self.creator_lock:
+                self.creator.add_item_for(
+                    path=path,
+                    title="",
+                    content=read_from_zip(zip_ark, ark_member, as_text=False),
+                )
+            logger.debug(f'Added exercise support file {path}')
+
+        # prepare and add exercise HTML article
         node = self.db.get_node(node_id, with_parents=True)
         html = self.jinja2_env.get_template("perseus_exercise.html").render(
             node_id=node_id,
-            perseus_content=perseus_content,
+            perseus_content=f"[{', '.join(assessment_items)}]",
             questions_count=str(len(assessment_items)),
             **node
         )
