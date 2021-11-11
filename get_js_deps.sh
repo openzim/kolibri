@@ -15,6 +15,10 @@ if ! command -v unzip > /dev/null; then
 	exit 1
 fi
 
+if [ "$(uname -s)" = "Darwin" ]; then
+	SEDEXT=.bak
+fi
+
 # Absolute path this script is in.
 SCRIPT_PATH="$( cd "$(dirname "$0")" ; pwd -P )"
 ASSETS_PATH="${SCRIPT_PATH}/kolibri2zim/templates/assets"
@@ -90,12 +94,12 @@ echo "getting perseus renderer"
 # curl -L -O https://github.com/imnitishng/standalone-perseus/archive/refs/tags/v1.1.3.zip
 curl -L -O https://github.com/rgaudin/standalone-perseus/archive/refs/heads/urlfixed.zip
 rm -rf $ASSETS_PATH/perseus
-unzip -o standalone-perseus-urlfixed.zip
+unzip -o urlfixed.zip
 mkdir -p $ASSETS_PATH/perseus
 mv standalone-perseus-urlfixed/* $ASSETS_PATH/perseus
 rm -rf standalone-perseus-urlfixed/
 rm -f urlfixed.zip
-sed '1s/""/"assets\/perseus\/"/' $ASSETS_PATH/perseus/build/frame-perseus.js > $ASSETS_PATH/perseus/build/frame-perseus.js
+sed -i $SEDEXT '1s/""/"assets\/perseus\/"/' $ASSETS_PATH/perseus/build/frame-perseus.js
 
 if command -v fix_ogvjs_dist > /dev/null; then
     echo "fixing JS files"
