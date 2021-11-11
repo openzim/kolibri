@@ -96,7 +96,7 @@ rm -rf $ASSETS_PATH/perseus
 unzip -o v1.1.4.zip
 mkdir -p $ASSETS_PATH/perseus
 mv standalone-perseus-1.1.4/* $ASSETS_PATH/perseus
-rm -rf standalone-perseus-urlfixed/
+rm -rf standalone-perseus-1.1.4/
 rm -f v1.1.4.zip
 sed -i $SEDEXT '1s/""/"assets\/perseus\/"/' $ASSETS_PATH/perseus/build/frame-perseus.js
 
