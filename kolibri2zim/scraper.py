@@ -743,7 +743,6 @@ class Kolibri2Zim:
         self.creator = Creator(
             filename=self.output_dir.joinpath(self.fname),
             main_path=self.root_id,
-            favicon_path="favicon.png",
             language="eng",
             title=self.title,
             description=self.description,
@@ -897,6 +896,12 @@ class Kolibri2Zim:
         # convert to PNG (might already be PNG but it's OK)
         favicon_fpath = favicon_orig.with_suffix(".png")
         convert_image(favicon_orig, favicon_fpath)
+
+        # resize to appropriate size (ZIM uses 48x48 so we double for retina)
+        for size in (96, 48):
+            resize_image(favicon_fpath, width=size, height=size, method="thumbnail")
+            with open(favicon_fpath, "rb") as fh:
+                self.creator.add_illustration(size, fh.read())
 
         # resize to appropriate size (ZIM uses 48x48)
         resize_image(favicon_fpath, width=96, height=96, method="thumbnail")
