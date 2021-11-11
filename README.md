@@ -2,7 +2,7 @@ kolibri2zim
 =============
 
 [![CodeFactor](https://www.codefactor.io/repository/github/openzim/kolibri2zim/badge)](https://www.codefactor.io/repository/github/openzim/kolibri2zim)
-[![Docker](https://img.shields.io/docker/v/openzim/kolibr?label=docker&sort=semver)](https://hub.docker.com/r/openzim/kolibri)
+[![Docker](https://img.shields.io/docker/v/openzim/kolibri?label=docker&sort=semver)](https://hub.docker.com/r/openzim/kolibri)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![PyPI version shields.io](https://img.shields.io/pypi/v/kolibri2zim.svg)](https://pypi.org/project/kolibri2zim/)
 
