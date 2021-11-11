@@ -1,4 +1,4 @@
-# 1.0.0.dev0
+# 1.0.0
 
 - initial version
 - supports topic/document/audio/video/html5/exercise content types
