@@ -1,9 +1,7 @@
 {% extends "base.html" %}
 
-{% block head %}
-  <meta charset="UTF-8">
+{% block pre_head %}
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" type="text/css" href="./assets/perseus/stylesheets/local-only/khan-site.css">
   <link rel="stylesheet" type="text/css" href="./assets/perseus/stylesheets/local-only/khan-exercise.css">
   <link rel="stylesheet" type="text/css" href="./assets/perseus/lib/katex/katex.css">
@@ -14,7 +12,7 @@
   <link rel="stylesheet/less" type="text/css" href="./assets/perseus/stylesheets/perseus-admin-package/editor.less">
   <link rel="stylesheet/less" type="text/css" href="./assets/perseus/stylesheets/perseus.css">
   <link rel="stylesheet/less" type="text/css" href="./assets/perseus/stylesheets/exercise.css">
-
+  <link href="./assets/bootstrap/bootstrap.min.css" rel="stylesheet">
   <style id="less:stylesheets-exercise-content-package-perseus"></style>
   <style>
     body {
@@ -542,7 +540,6 @@
 <script src="./assets/perseus/lib/vue.js"></script>
 <script src="./assets/perseus/lib/i18n.js"></script>
 <script src="./assets/perseus/lib/jquery.qtip.js"></script>
-
 <script src="./assets/perseus/build/frame-perseus.js"></script>
 <script src='./assets/perseus/solver.js'></script>
 <script type="module" src='./assets/perseus/perseus_script.js'></script>
