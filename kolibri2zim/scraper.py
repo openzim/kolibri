@@ -10,7 +10,9 @@ import datetime
 import tempfile
 import threading
 import hashlib
+import json
 from pathlib import Path
+from typing import Optional
 import concurrent.futures as cf
 
 import jinja2
@@ -70,6 +72,11 @@ def get_kolibri_url_for(file_id: str, ext: str):
     remote_dirs = (file_id[0], file_id[1])
     remote_path = f"{'/'.join(remote_dirs)}/{fname}"
     return f"{STUDIO_URL}/content/storage/{remote_path}", fname
+
+
+def read_from_zip(ark, member, as_text: Optional[bool] = True):
+    data = ark.open(member).read()
+    return data.decode("utf-8") if as_text else data
 
 
 class Kolibri2Zim:
@@ -491,13 +498,79 @@ class Kolibri2Zim:
     def add_exercise_node(self, node_id):
         """Add content from this `exercise` node to zim
 
-        exercise node is composed of a single perseus file
-
+        exercise node is composed of a single perseus file.
         a perseus file is a ZIP containing an exercise.json entrypoint and other files
+        we extract and add the individual exercises as standalone HTML files dependent
+        on standalone version of perseus reader from https://github.com/Khan/perseus"""
 
-        we'd solely add the perseus file in the ZIM along with the perseus reader from
-        https://github.com/Khan/perseus"""
-        logger.warning(f"[NOT SUPPORTED] not adding exercice node {node_id}")
+        # find perseus file (should be a single one)
+        files = self.db.get_node_files(node_id, thumbnail=False)
+        if not files:
+            return
+        files = sorted(files, key=lambda f: f["prio"])
+        perseus_file = next(filter(lambda f: f["supp"] == 0, files))
+
+        # download persus file
+        perseus_url, perseus_name = get_kolibri_url_for(
+            perseus_file["id"], perseus_file["ext"])
+        perseus_data = io.BytesIO()
+        stream_file(url=perseus_url, byte_stream=perseus_data)
+
+        # read JSON manifest from perseus file
+        zip_ark = zipfile.ZipFile(perseus_data)
+        manifest_name = "exercise.json"
+        if manifest_name not in zip_ark.namelist():
+            logger.error(f"Excercise node without {manifest_name}")
+            return
+        manifest = json.loads(read_from_zip(zip_ark, manifest_name))
+
+        # copy exercise content, rewriting internal paths
+        # all internal resources to be stored under {node_id}/ prefix
+        assessment_items = []
+        for assessment_item in manifest.get("all_assessment_items", []):
+            item_path = f"{assessment_item}.json"
+            if item_path in zip_ark.namelist():
+                perseus_content = read_from_zip(zip_ark, item_path)
+                perseus_content = perseus_content.replace(
+                    r"web+graphie:${☣ LOCALPATH}",
+                    f'web+graphie:./{node_id}'
+                )
+                perseus_content = perseus_content.replace(
+                    r"${☣ LOCALPATH}",
+                    f'./{node_id}'
+                )
+            assessment_items.append(perseus_content)
+
+        # add all support files to ZIM
+        for ark_member in zip_ark.namelist():
+            if ark_member == manifest_name:
+                continue
+
+            path = f"{node_id}/{ark_member}"
+            with self.creator_lock:
+                self.creator.add_item_for(
+                    path=path,
+                    title="",
+                    content=read_from_zip(zip_ark, ark_member, as_text=False),
+                )
+            logger.debug(f'Added exercise support file {path}')
+
+        # prepare and add exercise HTML article
+        node = self.db.get_node(node_id, with_parents=True)
+        html = self.jinja2_env.get_template("perseus_exercise.html").render(
+            node_id=node_id,
+            perseus_content=f"[{', '.join(assessment_items)}]",
+            questions_count=str(len(assessment_items)),
+            **node
+        )
+        with self.creator_lock:
+            self.creator.add_item_for(
+                path=node_id,
+                title=node["title"],
+                content=html,
+                mimetype="text/html"
+            )
+        logger.debug(f'Added exercise node #{node_id}')
 
     def add_document_node(self, node_id):
         """Add content from this `document` node to zim
@@ -670,7 +743,6 @@ class Kolibri2Zim:
         self.creator = Creator(
             filename=self.output_dir.joinpath(self.fname),
             main_path=self.root_id,
-            favicon_path="favicon.png",
             language="eng",
             title=self.title,
             description=self.description,
@@ -824,6 +896,12 @@ class Kolibri2Zim:
         # convert to PNG (might already be PNG but it's OK)
         favicon_fpath = favicon_orig.with_suffix(".png")
         convert_image(favicon_orig, favicon_fpath)
+
+        # resize to appropriate size (ZIM uses 48x48 so we double for retina)
+        for size in (96, 48):
+            resize_image(favicon_fpath, width=size, height=size, method="thumbnail")
+            with open(favicon_fpath, "rb") as fh:
+                self.creator.add_illustration(size, fh.read())
 
         # resize to appropriate size (ZIM uses 48x48)
         resize_image(favicon_fpath, width=96, height=96, method="thumbnail")

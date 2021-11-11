@@ -7,11 +7,9 @@
 <div class="children">
   <div class="row">
     {% for child in children %}
-    {% if child.kind != 'exercise' %}
     <div class="mb-4 col-12 col-sm-6 col-md-4 col-xl-3">
       {% include "card.html" ignore missing with context %}
     </div>
-    {% endif %}
     {% endfor %}
   </div>
 
