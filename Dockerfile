@@ -13,6 +13,8 @@ COPY kolibri2zim /src/kolibri2zim
 COPY setup.py *.md get_js_deps.sh MANIFEST.in /src/
 RUN cd /src/ && ./get_js_deps.sh && python3 ./setup.py install
 
+# default output directory
 RUN mkdir -p /output
 WORKDIR /output
+
 CMD ["kolibri2zim", "--help"]
