@@ -91,14 +91,13 @@ rm -rf icons-1.4.0
 rm -f v1.4.0.zip
 
 echo "getting perseus renderer"
-# curl -L -O https://github.com/imnitishng/standalone-perseus/archive/refs/tags/v1.1.3.zip
-curl -L -O https://github.com/rgaudin/standalone-perseus/archive/refs/heads/urlfixed.zip
+curl -L -O https://github.com/rgaudin/standalone-perseus/archive/refs/tags/v1.1.4.zip
 rm -rf $ASSETS_PATH/perseus
-unzip -o urlfixed.zip
+unzip -o v1.1.4.zip
 mkdir -p $ASSETS_PATH/perseus
-mv standalone-perseus-urlfixed/* $ASSETS_PATH/perseus
+mv standalone-perseus-1.1.4/* $ASSETS_PATH/perseus
 rm -rf standalone-perseus-urlfixed/
-rm -f urlfixed.zip
+rm -f v1.1.4.zip
 sed -i $SEDEXT '1s/""/"assets\/perseus\/"/' $ASSETS_PATH/perseus/build/frame-perseus.js
 
 if command -v fix_ogvjs_dist > /dev/null; then
