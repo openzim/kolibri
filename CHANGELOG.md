@@ -1,4 +1,18 @@
-# 1.0.0
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+### Changed
+
+- Using zimscraperlib 1.8, creating libzim7 ZIM files
+- Updated dependencies (beautifulsoup4, Jinja2)
+
+## [1.0.0] - 2021-11-11
 
 - initial version
 - supports topic/document/audio/video/html5/exercise content types

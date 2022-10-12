@@ -10,11 +10,11 @@ on:
 jobs:
   build-and-push:
     name: Deploy Docker Image
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3.1.0
       - name: Build and push
-        uses: openzim/docker-publish-action@v6
+        uses: openzim/docker-publish-action@v9
         with:
           image-name: openzim/kolibri
           on-master: dev
@@ -26,3 +26,5 @@ jobs:
             DOCKERIO_TOKEN=${{ secrets.DOCKERHUB_PASSWORD }}
             GHCRIO_USERNAME=${{ secrets.GHCR_USERNAME }}
             GHCRIO_TOKEN=${{ secrets.GHCR_TOKEN }}
+          repo_description: auto
+          repo_overview: auto
