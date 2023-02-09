@@ -67,7 +67,7 @@ def filename_for(file):
 
 
 def get_kolibri_url_for(file_id: str, ext: str):
-    """ download URL and filename for a file ID and extension """
+    """download URL and filename for a file ID and extension"""
     fname = f"{file_id}.{ext}"
     remote_dirs = (file_id[0], file_id[1])
     remote_path = f"{'/'.join(remote_dirs)}/{fname}"
@@ -142,7 +142,7 @@ class Kolibri2Zim:
         return ROOT_DIR.joinpath("templates")
 
     def add_local_files(self, root_path, folder):
-        """ recursively add local files from {folder} starting at {path} """
+        """recursively add local files from {folder} starting at {path}"""
         non_front = ("viewer.html", "epub_embed.html")
         for fpath in folder.iterdir():
             path = "/".join([root_path, fpath.name])
@@ -170,7 +170,7 @@ class Kolibri2Zim:
             schedule_node((node["id"], node["kind"]))
 
     def add_node(self, item):
-        """ process a content node from the tuple in queue """
+        """process a content node from the tuple in queue"""
         node_id, kind = item
         # check if we have a handler for this {kind} of node
         handler = getattr(self, f"add_{kind}_node", None)
@@ -188,14 +188,14 @@ class Kolibri2Zim:
             handler(node_id)
 
     def funnel_file(self, fid, fext):
-        """ directly add a Kolibri file to the ZIM using same name """
+        """directly add a Kolibri file to the ZIM using same name"""
         url, fname = get_kolibri_url_for(fid, fext)
         with self.creator_lock:
             self.creator.add_item(URLItem(url=url, path=fname))
         logger.debug(f"Added {fname} from Studio")
 
     def download_to_disk(self, file_id, ext):
-        """ download a Kolibri file to the build-dir using its filename """
+        """download a Kolibri file to the build-dir using its filename"""
         url, fname = get_kolibri_url_for(file_id, ext)
         fpath = self.build_dir / fname
         stream_file(url, fpath)
@@ -248,7 +248,7 @@ class Kolibri2Zim:
         return f"{file_id[0]}/{file_id[1]}/{file_id}/{type(preset).__name__.lower()}"
 
     def upload_to_s3(self, key, fpath, **meta):
-        """ whether it successfully uploaded to cache """
+        """whether it successfully uploaded to cache"""
         if not self.s3_storage:
             return
 
@@ -460,7 +460,7 @@ class Kolibri2Zim:
         future.add_done_callback(self.add_video_upon_completion)
 
     def request_s3_upload_and_removal(self, item):
-        """ add file from item to uploads list """
+        """add file from item to uploads list"""
         path = item.path
         del item
         dest_fpath, key, meta = self.pending_upload.get(path)
@@ -512,7 +512,8 @@ class Kolibri2Zim:
 
         # download persus file
         perseus_url, perseus_name = get_kolibri_url_for(
-            perseus_file["id"], perseus_file["ext"])
+            perseus_file["id"], perseus_file["ext"]
+        )
         perseus_data = io.BytesIO()
         stream_file(url=perseus_url, byte_stream=perseus_data)
 
@@ -532,12 +533,10 @@ class Kolibri2Zim:
             if item_path in zip_ark.namelist():
                 perseus_content = read_from_zip(zip_ark, item_path)
                 perseus_content = perseus_content.replace(
-                    r"web+graphie:${☣ LOCALPATH}",
-                    f'web+graphie:./{node_id}'
+                    r"web+graphie:${☣ LOCALPATH}", f"web+graphie:./{node_id}"
                 )
                 perseus_content = perseus_content.replace(
-                    r"${☣ LOCALPATH}",
-                    f'./{node_id}'
+                    r"${☣ LOCALPATH}", f"./{node_id}"
                 )
             assessment_items.append(perseus_content)
 
@@ -553,7 +552,7 @@ class Kolibri2Zim:
                     title="",
                     content=read_from_zip(zip_ark, ark_member, as_text=False),
                 )
-            logger.debug(f'Added exercise support file {path}')
+            logger.debug(f"Added exercise support file {path}")
 
         # prepare and add exercise HTML article
         node = self.db.get_node(node_id, with_parents=True)
@@ -561,16 +560,13 @@ class Kolibri2Zim:
             node_id=node_id,
             perseus_content=f"[{', '.join(assessment_items)}]",
             questions_count=str(len(assessment_items)),
-            **node
+            **node,
         )
         with self.creator_lock:
             self.creator.add_item_for(
-                path=node_id,
-                title=node["title"],
-                content=html,
-                mimetype="text/html"
+                path=node_id, title=node["title"], content=html, mimetype="text/html"
             )
-        logger.debug(f'Added exercise node #{node_id}')
+        logger.debug(f"Added exercise node #{node_id}")
 
     def add_document_node(self, node_id):
         """Add content from this `document` node to zim
@@ -696,7 +692,7 @@ class Kolibri2Zim:
             with self.creator_lock:
                 self.creator.add_redirect(
                     path=f"{node_id}/{ark_member}",
-                    target_path=f"html5_files/{content_hash}"
+                    target_path=f"html5_files/{content_hash}",
                 )
 
         logger.debug(f"Added HTML5 node #{node_id}")
