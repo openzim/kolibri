@@ -21,7 +21,7 @@ from pif import get_public_ip
 from kiwixstorage import KiwixStorage
 from zimscraperlib.download import stream_file
 from zimscraperlib.zim.creator import Creator
-from zimscraperlib.zim.items import URLItem, StaticItem
+from zimscraperlib.zim.items import StaticItem
 from zimscraperlib.i18n import find_language_names
 from zimscraperlib.inputs import handle_user_provided_file
 from zimscraperlib.image.convertion import convert_image, create_favicon
@@ -32,6 +32,7 @@ from zimscraperlib.video.encoding import reencode
 
 from .constants import ROOT_DIR, getLogger, STUDIO_URL
 from .database import KolibriDB
+from .debug import URLItem
 
 logger = getLogger()
 options = [
@@ -397,6 +398,7 @@ class Kolibri2Zim:
                 content=html,
                 mimetype="text/html",
             )
+        logger.debug(f"Added video #{node_id}")
 
     def add_video_upon_completion(self, future):
         """adds the converted video inside this future to the zim
@@ -739,6 +741,7 @@ class Kolibri2Zim:
         self.creator = Creator(
             filename=self.output_dir.joinpath(self.fname),
             main_path=self.root_id,
+            ignore_duplicates=True,
             language="eng",
             title=self.title,
             description=self.description,
@@ -780,7 +783,10 @@ class Kolibri2Zim:
             # only awaits future completion and doesn't include callbacks
             self.videos_executor.shutdown()
 
-            succeeded = not result.not_done
+            succeeded = (
+                not result.not_done
+                and sum([1 if fs.exception() else 0 for fs in result.done]) == 0
+            )
         except KeyboardInterrupt:
             self.creator.can_finish = False
             logger.error("KeyboardInterrupt, exiting.")
@@ -792,6 +798,15 @@ class Kolibri2Zim:
         finally:
             if succeeded:
                 logger.info("Finishing ZIM file…")
+            else:
+                # DEBUG: raise first exception
+                logger.info(
+                    f"FAILURE not_done={len(result.not_done)} done={len(result.done)}"
+                )
+                if result.done:
+                    for future in result.done:
+                        if future.exception():
+                            raise future.exception()
             # we need to release libzim's resources.
             # currently does nothing but crash if can_finish=False but that's awaiting
             # impl. at libkiwix level

@@ -9,7 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Using zimscraperlib 1.8, creating libzim7 ZIM files
+- Using zimscraperlib 2.0, creating libzim8 ZIM files
+- Allowing duplicated resources at different paths
+- fixed suceeded status in case an exception was raised
 - Updated dependencies (beautifulsoup4, Jinja2)
 
 ## [1.0.0] - 2021-11-11
