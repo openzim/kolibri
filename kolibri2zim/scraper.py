@@ -61,6 +61,7 @@ options = [
     "css",
     "dedup_html_files",
 ]
+NOSTREAM_FUNNEL_SIZE = 2**20 * 2  # 2MiB
 
 
 def filename_for(file):
@@ -192,7 +193,9 @@ class Kolibri2Zim:
         """directly add a Kolibri file to the ZIM using same name"""
         url, fname = get_kolibri_url_for(fid, fext)
         with self.creator_lock:
-            self.creator.add_item(URLItem(url=url, path=fname))
+            self.creator.add_item(
+                URLItem(url=url, path=fname, nostream_threshold=NOSTREAM_FUNNEL_SIZE)
+            )
         logger.debug(f"Added {fname} from Studio")
 
     def download_to_disk(self, file_id, ext):

@@ -4,10 +4,12 @@ import pathlib
 import re
 import tempfile
 import urllib.parse
+from typing import Optional, Union
 
-from zimscraperlib.download import stream_file
+import libzim.writer
+import requests
+from zimscraperlib.download import stream_file, _get_retry_adapter
 from zimscraperlib.zim.items import StaticItem
-from zimscraperlib.zim.providers import URLProvider
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger("DEBUG")
@@ -17,6 +19,46 @@ logger = logging.getLogger("DEBUG")
 bs1 = 464505
 bs2 = 1226905
 bss = [bs1, bs2]
+
+session = requests.Session()
+session.mount("http", _get_retry_adapter())
+
+
+class URLProvider(libzim.writer.ContentProvider):
+    """Provider downloading content as it is consumed by the libzim
+
+    Useful for non-indexed content for which feed() is called only once"""
+
+    def __init__(
+        self, url: str, size: Optional[int] = None, ref: Optional[object] = None
+    ):
+        super().__init__()
+        self.url = url
+        self.size = size if size is not None else self.get_size_of(url)
+        self.ref = ref
+
+        self.resp = session.get(url, stream=True)
+        self.resp.raise_for_status()
+
+    @staticmethod
+    def get_size_of(url) -> Union[int, None]:
+        _, headers = stream_file(url, byte_stream=io.BytesIO(), only_first_block=True)
+        try:
+            return int(headers["Content-Length"])
+        except Exception:
+            return None
+
+    def get_size(self) -> int:
+        return self.size
+
+    def gen_blob(self) -> libzim.writer.Blob:  # pragma: nocover
+        read = 0
+        source = self.resp.iter_content(10 * 1024)
+        while read < self.size:
+            data = next(source)
+            read += len(data)
+            yield libzim.writer.Blob(data)
+        yield libzim.writer.Blob(b"")
 
 
 class URLItem(StaticItem):
@@ -52,6 +94,7 @@ class URLItem(StaticItem):
         super().__init__(**kwargs)
         self.url = urllib.parse.urlparse(url)
         use_disk = getattr(self, "use_disk", False)
+        nostream_threshold = getattr(self, "nostream_threshold", -1)
 
         logger.info(f"> {self.url.geturl()}")
 
@@ -99,6 +142,10 @@ class URLItem(StaticItem):
             # downloaded to RAM and using a bytes object
             else:
                 self.fileobj = target
+
+        if self.size and nostream_threshold and self.size <= nostream_threshold:
+            self.fileobj = io.BytesIO()
+            stream_file(self.url.geturl(), byte_stream=self.fileobj)
 
     def get_path(self) -> str:
         return getattr(self, "path", re.sub(r"^/", "", self.url.path))
