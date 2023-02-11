@@ -61,7 +61,7 @@ options = [
     "css",
     "dedup_html_files",
 ]
-NOSTREAM_FUNNEL_SIZE = 2**20 * 2  # 2MiB
+NOSTREAM_FUNNEL_SIZE = 1024  # 2**20 * 2  # 2MiB
 
 
 def filename_for(file):
