@@ -790,6 +790,15 @@ class Kolibri2Zim:
                 not result.not_done
                 and sum([1 if fs.exception() else 0 for fs in result.done]) == 0
             )
+
+            # DEBUG: raise first exception
+            if not succeeded and result.done:
+                logger.info(
+                    f"FAILURE not_done={len(result.not_done)} done={len(result.done)}"
+                )
+                for future in result.done:
+                    if future.exception():
+                        raise future.exception()
         except KeyboardInterrupt:
             self.creator.can_finish = False
             logger.error("KeyboardInterrupt, exiting.")
@@ -801,15 +810,6 @@ class Kolibri2Zim:
         finally:
             if succeeded:
                 logger.info("Finishing ZIM file…")
-            else:
-                # DEBUG: raise first exception
-                logger.info(
-                    f"FAILURE not_done={len(result.not_done)} done={len(result.done)}"
-                )
-                if result.done:
-                    for future in result.done:
-                        if future.exception():
-                            raise future.exception()
             # we need to release libzim's resources.
             # currently does nothing but crash if can_finish=False but that's awaiting
             # impl. at libkiwix level
