@@ -19,7 +19,6 @@ import jinja2
 from bs4 import BeautifulSoup
 from pif import get_public_ip
 from kiwixstorage import KiwixStorage
-from zimscraperlib.download import stream_file
 from zimscraperlib.zim.creator import Creator
 from zimscraperlib.zim.items import StaticItem
 from zimscraperlib.i18n import find_language_names
@@ -32,7 +31,7 @@ from zimscraperlib.video.encoding import reencode
 
 from .constants import ROOT_DIR, getLogger, STUDIO_URL
 from .database import KolibriDB
-from .debug import URLItem
+from .debug import ON_DISK_THRESHOLD, download_to, get_size_and_mime
 
 logger = getLogger()
 options = [
@@ -191,18 +190,34 @@ class Kolibri2Zim:
 
     def funnel_file(self, fid, fext):
         """directly add a Kolibri file to the ZIM using same name"""
+
         url, fname = get_kolibri_url_for(fid, fext)
-        with self.creator_lock:
-            self.creator.add_item(
-                URLItem(url=url, path=fname, nostream_threshold=NOSTREAM_FUNNEL_SIZE)
+        size, mimetype = get_size_and_mime(url)
+
+        item_kw = dict(path=fname, title="", mimetype=mimetype, delete_fpath=True)
+
+        if not size or size >= ON_DISK_THRESHOLD:
+            item_kw["fpath"] = Path(
+                tempfile.NamedTemporaryFile(
+                    suffix=Path(fname).suffix, delete=False, dir=self.build_dir
+                ).name
             )
+            download_to(url, item_kw["fpath"])
+        else:
+            fileobj = io.BytesIO()
+            download_to(url, byte_stream=fileobj)
+            item_kw["content"] = fileobj.getvalue()
+            del fileobj
+
+        with self.creator_lock:
+            self.creator.add_item_for(**item_kw)
         logger.debug(f"Added {fname} from Studio")
 
     def download_to_disk(self, file_id, ext):
         """download a Kolibri file to the build-dir using its filename"""
         url, fname = get_kolibri_url_for(file_id, ext)
         fpath = self.build_dir / fname
-        stream_file(url, fpath)
+        download_to(url, fpath=fpath)
         return fpath
 
     def funnel_from_s3(self, file_id, path, checksum, preset):
@@ -520,7 +535,7 @@ class Kolibri2Zim:
             perseus_file["id"], perseus_file["ext"]
         )
         perseus_data = io.BytesIO()
-        stream_file(url=perseus_url, byte_stream=perseus_data)
+        download_to(perseus_url, byte_stream=perseus_data)
 
         # read JSON manifest from perseus file
         zip_ark = zipfile.ZipFile(perseus_data)
@@ -668,7 +683,7 @@ class Kolibri2Zim:
         # download ZIP file to memory
         ark_url, ark_name = get_kolibri_url_for(file["id"], file["ext"])
         ark_data = io.BytesIO()
-        stream_file(url=ark_url, byte_stream=ark_data)
+        download_to(url=ark_url, byte_stream=ark_data)
 
         # loop over zip members and create an entry (or redir. for each if using dedup)
         zip_ark = zipfile.ZipFile(ark_data)
@@ -843,7 +858,7 @@ class Kolibri2Zim:
         # download database
         fpath = self.build_dir.joinpath("db.sqlite3")
         logger.debug(f"Downloading database into {fpath.name}…")
-        stream_file(
+        download_to(
             f"{STUDIO_URL}/content/databases/{self.channel_id}.sqlite3",
             fpath,
         )
