@@ -5,13 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.0.1] - 2023-02-22
 
 ### Changed
 
 - Using zimscraperlib 2.0, creating libzim8 ZIM files
 - Allowing duplicated resources at different paths
-- fixed suceeded status in case an exception was raised
+- fixed succeeded status in case an exception was raised
 - Updated dependencies (beautifulsoup4, Jinja2)
 
 ## [1.0.0] - 2021-11-11
