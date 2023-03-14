@@ -1,4 +1,4 @@
-FROM python:3.8-buster
+FROM python:3.11-bullseye
 LABEL org.opencontainers.image.source https://github.com/openzim/kolibri2zim
 
 # Install necessary packages

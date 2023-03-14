@@ -6,6 +6,7 @@ from typing import Optional, Tuple
 import requests
 from retrying import retry
 from zimscraperlib.download import stream_file, _get_retry_adapter
+from zimscraperlib.video.encoding import reencode
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger("DEBUG")
@@ -45,3 +46,9 @@ def download_to(
 ):
     logger.debug(f"download_to({url=}) {'to-file' if fpath else 'to-mem'}")
     stream_file(url, fpath=fpath, byte_stream=byte_stream)
+
+
+# retry up to three times on subprocess.CalledProcessError
+@retry(stop_max_attempt_number=3)
+def safer_reencode(*args, **kwargs):
+    return reencode(*args, **kwargs)

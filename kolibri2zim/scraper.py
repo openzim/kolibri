@@ -27,11 +27,10 @@ from zimscraperlib.image.convertion import convert_image, create_favicon
 from zimscraperlib.image.transformation import resize_image
 from zimscraperlib.filesystem import get_file_mimetype
 from zimscraperlib.video.presets import VideoWebmLow, VideoWebmHigh, VideoMp4Low
-from zimscraperlib.video.encoding import reencode
 
 from .constants import ROOT_DIR, getLogger, STUDIO_URL
 from .database import KolibriDB
-from .debug import ON_DISK_THRESHOLD, download_to, get_size_and_mime
+from .debug import ON_DISK_THRESHOLD, download_to, get_size_and_mime, safer_reencode
 
 logger = getLogger()
 options = [
@@ -459,7 +458,7 @@ class Kolibri2Zim:
         """add video to the process-based convertion queue"""
 
         future = self.videos_executor.submit(
-            reencode,
+            safer_reencode,
             src_path=src_fpath,
             dst_path=dest_fpath,
             ffmpeg_args=preset.to_ffmpeg_args(),
