@@ -2,7 +2,7 @@ kolibri2zim
 =============
 
 [![CodeFactor](https://www.codefactor.io/repository/github/openzim/kolibri/badge)](https://www.codefactor.io/repository/github/openzim/kolibri)
-[![Docker](https://img.shields.io/docker/v/openzim/kolibri?label=docker&sort=semver)](https://hub.docker.com/r/openzim/kolibri)
+[![Docker](https://ghcr-badge.deta.dev/openzim/kolibri/latest_tag?label=docker)](https://ghcr.io/openzim/kolibri)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![PyPI version shields.io](https://img.shields.io/pypi/v/kolibri2zim.svg)](https://pypi.org/project/kolibri2zim/)
 
@@ -42,7 +42,7 @@ See `requirements.txt` for the list of python dependencies.
 ## Docker
 
 ```bash
-docker run -v my_dir:/output openzim/kolibri2zim kolibri2zim --help
+docker run -v my_dir:/output ghcr.io/openzim/kolibri2zim kolibri2zim --help
 ```
 
 Usage
