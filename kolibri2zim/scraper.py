@@ -766,6 +766,7 @@ class Kolibri2Zim:
             publisher=self.publisher,
             name=self.name,
             tags=";".join(self.tags),
+            date=datetime.date.today().strftime("%Y-%d-%m"),
         ).start()
 
         succeeded = False
