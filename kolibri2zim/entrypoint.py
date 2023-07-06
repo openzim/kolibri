@@ -184,6 +184,11 @@ def main():
         version=SCRAPER,
     )
 
+    parser.add_argument(
+        "--node-ids",
+        help="Comma-separated list of node IDs to process ; root is always processed.",
+    )
+
     args = parser.parse_args()
     setDebug(args.debug)
     logger = getLogger()
