@@ -1,7 +1,5 @@
 var params = URLSearchParams && new URLSearchParams(document.location.search.substring(1));
     var url = params && params.get("url") && decodeURIComponent(params.get("url"));
-    var currentCfi = (params && params.get("cfi")) ? params.get("cfi") : undefined;
-    var currentSectionIndex = (params && params.get("loc")) ? parseInt(params.get("loc")) : undefined;
 
     // Load the opf
     var book = ePub(url);
@@ -10,6 +8,9 @@ var params = URLSearchParams && new URLSearchParams(document.location.search.sub
       height: 600
     });
 
+    rendition.display();
+
+    /*
     var displayed = rendition.display();
 
     displayed.then(function(renderer){
@@ -20,6 +21,7 @@ var params = URLSearchParams && new URLSearchParams(document.location.search.sub
     book.loaded.navigation.then(function(toc){
       // console.log(toc);
     });
+    */
 
     var next = document.getElementById("next");
     next.addEventListener("click", function(){
