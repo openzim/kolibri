@@ -58,6 +58,7 @@ options = [
     "about",
     "css",
     "dedup_html_files",
+    "node_ids"
 ]
 NOSTREAM_FUNNEL_SIZE = 1024  # 2**20 * 2  # 2MiB
 
@@ -131,6 +132,9 @@ class Kolibri2Zim:
         self.keep_build_dir = go("keep_build_dir")
         self.debug = go("debug")
         self.only_topics = go("only_topics")
+        self.node_ids = (
+            None if go("node_ids") is None else [t.strip() for t in go("node_ids").split(",")]
+        )
 
         # jinja2 environment setup
         self.jinja2_env = jinja2.Environment(
@@ -167,7 +171,8 @@ class Kolibri2Zim:
 
         # fill queue with (node_id, kind) tuples for all root node's descendants
         for node in self.db.get_node_descendants(self.root_id):
-            schedule_node((node["id"], node["kind"]))
+            if self.node_ids is None or node["id"] in self.node_ids:
+                schedule_node((node["id"], node["kind"]))
 
     def add_node(self, item):
         """process a content node from the tuple in queue"""

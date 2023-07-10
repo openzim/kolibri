@@ -28,6 +28,11 @@ def main():
     )
 
     parser.add_argument(
+        "--node-ids",
+        help="Comma-separated list of node IDs to process ; root is always processed.",
+    )
+
+    parser.add_argument(
         "--name",
         help="ZIM name. Used as identifier and filename (date will be appended)",
         required=True,
