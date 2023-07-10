@@ -7,11 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## Fixed
+- Fix issue with ePub rendering which was outside the iframe
+
 ### Changed
 
 - Using zimscraperlib 2.1
 - Updated image to `python:3.11-bullseye`
 - Retrying video reencoding up to three times
+- Move inline javascript to dedicated files
+- Move huge inline CSS to dedicated file
+- Add `--node-ids` CLI parameter to process only few nodes (useful for debugging)
 
 ## [1.0.1] - 2023-02-22
 
