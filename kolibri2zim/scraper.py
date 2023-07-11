@@ -756,6 +756,9 @@ class Kolibri2Zim:
             f"  tags: {';'.join(self.tags)}"
         )
 
+        logger.info("Retrieving favicon")
+        self.retrieve_favicon()
+
         logger.info("Setup Zim Creator")
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -764,15 +767,21 @@ class Kolibri2Zim:
             filename=self.output_dir.joinpath(self.fname),
             main_path=self.root_id,
             ignore_duplicates=True,
-            language="eng",
-            title=self.title,
-            description=self.description,
-            creator=self.author,
-            publisher=self.publisher,
-            name=self.name,
-            tags=";".join(self.tags),
-            date=datetime.date.today().strftime("%Y-%d-%m"),
-        ).start()
+        )
+        with open(self.favicon_fpath, "rb") as fh:
+            favicon_bytes = fh.read()
+        self.creator.config_metadata(
+            Name=self.name,
+            Language="eng",
+            Title=self.title,
+            Description=self.description,
+            Creator=self.author,
+            Publisher=self.publisher,
+            Date=datetime.date.today().strftime("%Y-%d-%m"),
+            Illustration_48x48_at_1= favicon_bytes,
+        )
+        del favicon_bytes
+        self.creator.start()
 
         succeeded = False
         try:
@@ -901,7 +910,7 @@ class Kolibri2Zim:
 
         self.tags = list(set(self.tags + ["_category:other", "kolibri", "_videos:yes"]))
 
-    def add_favicon(self):
+    def retrieve_favicon(self):
         favicon_orig = self.build_dir / "favicon"
         # if user provided a custom favicon, retrieve that
         if self.favicon:
@@ -944,8 +953,12 @@ class Kolibri2Zim:
         favicon_ico_path = favicon_fpath.with_suffix(".ico")
         create_favicon(src=favicon_fpath, dst=favicon_ico_path)
 
-        self.creator.add_item_for("favicon.png", fpath=favicon_fpath)
-        self.creator.add_item_for("favicon.ico", fpath=favicon_ico_path)
+        self.favicon_fpath = favicon_fpath
+        self.favicon_ico_path = favicon_ico_path
+
+    def add_favicon(self):
+        self.creator.add_item_for("favicon.png", fpath=self.favicon_fpath)
+        self.creator.add_item_for("favicon.ico", fpath=self.favicon_ico_path)
 
     def add_custom_about_and_css(self):
         channel_meta = self.db.get_channel_metadata(self.channel_id)
