@@ -768,8 +768,6 @@ class Kolibri2Zim:
             main_path=self.root_id,
             ignore_duplicates=True,
         )
-        with open(self.favicon_fpath, "rb") as fh:
-            favicon_bytes = fh.read()
         self.creator.config_metadata(
             Name=self.name,
             Language="eng",
@@ -778,9 +776,8 @@ class Kolibri2Zim:
             Creator=self.author,
             Publisher=self.publisher,
             Date=datetime.date.today().strftime("%Y-%d-%m"),
-            Illustration_48x48_at_1= favicon_bytes,
+            Illustration_48x48_at_1=self.favicon_fpath.read_bytes(),
         )
-        del favicon_bytes
         self.creator.start()
 
         succeeded = False
