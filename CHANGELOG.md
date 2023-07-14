@@ -7,11 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## Fixed
+### Fixed
 - Fix issue with ePub rendering which was outside the iframe
+- Many small fixes (including some bugs) detected by ruff / pyright
 
 ### Changed
 
+- Migrate to our new Python standard (hatch, ruff, pyright, ...)
 - Using zimscraperlib 3.1.0
 - Updated image to `python:3.11-bullseye`
 - Retry video reencoding up to three times
