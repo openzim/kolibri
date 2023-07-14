@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -e
+
 ###
 # download JS dependencies and place them in our templates/assets folder
 # then launch our ogv.js script to fix dynamic loading links
