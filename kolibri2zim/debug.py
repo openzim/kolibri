@@ -1,11 +1,10 @@
 import io
 import logging
 import pathlib
-from typing import Optional, Tuple
 
 import requests
 from retrying import retry
-from zimscraperlib.download import stream_file, _get_retry_adapter
+from zimscraperlib.download import _get_retry_adapter, stream_file
 from zimscraperlib.video.encoding import reencode
 
 logging.basicConfig(level=logging.DEBUG)
@@ -41,8 +40,8 @@ def get_size_and_mime(url: str) -> Tuple[int, str]:
 @retry(stop_max_attempt_number=5, wait_exponential_multiplier=20000)
 def download_to(
     url: str,
-    fpath: Optional[pathlib.Path] = None,
-    byte_stream: Optional[io.IOBase] = None,
+    fpath: pathlib.Path | None = None,
+    byte_stream: io.BytesIO | None = None,
 ):
     logger.debug(f"download_to({url=}) {'to-file' if fpath else 'to-mem'}")
     stream_file(url, fpath=fpath, byte_stream=byte_stream)

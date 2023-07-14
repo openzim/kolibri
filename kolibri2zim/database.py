@@ -1,9 +1,8 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
-import pathlib
 import logging
+import pathlib
 import sqlite3
 
 logger = logging.getLogger(__name__)

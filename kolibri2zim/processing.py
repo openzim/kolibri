@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 from zimscraperlib.video.encoding import reencode
@@ -27,7 +26,8 @@ def post_process_video(video_dir, video_id, preset, video_format, low_quality):
         raise FileNotFoundError(f"Missing video file in {video_dir}")
     if len(files) > 1:
         logger.warning(
-            f"Multiple video file candidates for {video_id} in {video_dir}. Picking {files[0]} out of {files}"
+            f"Multiple video file candidates for {video_id} in {video_dir}. "
+            f"Picking {files[0]} out of {files}"
         )
     src_path = files[0]
 

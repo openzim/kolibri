@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
-import os
-import pathlib
 import logging
 import multiprocessing
+import os
+import pathlib
 
 from zimscraperlib.logging import getLogger as lib_getLogger
 

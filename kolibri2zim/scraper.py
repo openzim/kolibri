@@ -1,36 +1,40 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
-import io
-import shutil
 import base64
-import zipfile
+import concurrent.futures as cf
 import datetime
+import hashlib
+import io
+import json
+import shutil
 import tempfile
 import threading
-import hashlib
-import json
+import zipfile
 from pathlib import Path
-from typing import Optional
-import concurrent.futures as cf
+from typing import Any
 
 import jinja2
 from bs4 import BeautifulSoup
-from pif import get_public_ip
 from kiwixstorage import KiwixStorage
-from zimscraperlib.zim.creator import Creator
-from zimscraperlib.zim.items import StaticItem
+from pif import get_public_ip
+from zimscraperlib.filesystem import get_file_mimetype
 from zimscraperlib.i18n import find_language_names
-from zimscraperlib.inputs import handle_user_provided_file
 from zimscraperlib.image.convertion import convert_image, create_favicon
 from zimscraperlib.image.transformation import resize_image
-from zimscraperlib.filesystem import get_file_mimetype
-from zimscraperlib.video.presets import VideoWebmLow, VideoWebmHigh, VideoMp4Low
+from zimscraperlib.inputs import handle_user_provided_file
+from zimscraperlib.video.presets import VideoMp4Low, VideoWebmHigh, VideoWebmLow
+from zimscraperlib.zim.creator import Creator
+from zimscraperlib.zim.items import StaticItem
 
-from .constants import ROOT_DIR, getLogger, STUDIO_URL
-from .database import KolibriDB
-from .debug import ON_DISK_THRESHOLD, download_to, get_size_and_mime, safer_reencode
+from kolibri2zim.constants import ROOT_DIR, STUDIO_URL, get_logger
+from kolibri2zim.database import KolibriDB
+from kolibri2zim.debug import (
+    ON_DISK_THRESHOLD,
+    download_to,
+    get_size_and_mime,
+    safer_reencode,
+)
 
 logger = getLogger()
 options = [
@@ -58,7 +62,7 @@ options = [
     "about",
     "css",
     "dedup_html_files",
-    "node_ids"
+    "node_ids",
 ]
 NOSTREAM_FUNNEL_SIZE = 1024  # 2**20 * 2  # 2MiB
 
@@ -198,7 +202,12 @@ class Kolibri2Zim:
         url, fname = get_kolibri_url_for(fid, fext)
         size, mimetype = get_size_and_mime(url)
 
-        item_kw = dict(path=fname, title="", mimetype=mimetype, delete_fpath=True)
+        item_kw = {
+            "path": fname,
+            "title": "",
+            "mimetype": mimetype,
+            "delete_fpath": True,
+        }
 
         if not size or size >= ON_DISK_THRESHOLD:
             item_kw["fpath"] = Path(
@@ -347,7 +356,6 @@ class Kolibri2Zim:
 
             # funnel from S3 cache if it is present there
             if not self.funnel_from_s3(vfid, path, vchk, preset):
-
                 # download original video
                 src = self.download_to_disk(vid, video_file["ext"])
                 dst = src.with_suffix(".webm")
@@ -365,7 +373,6 @@ class Kolibri2Zim:
 
             # funnel from S3 cache if it is present there
             if not self.funnel_from_s3(vfid, path, vchk, preset):
-
                 # download original video
                 src = self.download_to_disk(vid, video_file["ext"])
 
@@ -905,7 +912,7 @@ class Kolibri2Zim:
             self.publisher = "Openzim"
         self.publisher = self.publisher.strip()
 
-        self.tags = list(set(self.tags + ["_category:other", "kolibri", "_videos:yes"]))
+        self.tags = list({*self.tags, "_category:other", "kolibri", "_videos:yes"})
 
     def retrieve_favicon(self):
         favicon_orig = self.build_dir / "favicon"

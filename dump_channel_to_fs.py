@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 
@@ -18,14 +17,14 @@
 
     Uses wget for downloads """
 
-import os
-import sys
-import pathlib
-import logging
-import sqlite3
 import contextlib
-import subprocess
+import logging
 import multiprocessing as mp
+import os
+import pathlib
+import sqlite3
+import subprocess
+import sys
 
 STUDIO_DEFAULT_BASE_URL = "https://studio.learningequality.org"
 STUDIO_URL = os.getenv("STUDIO_URL", STUDIO_DEFAULT_BASE_URL)
