@@ -36,7 +36,7 @@ from kolibri2zim.debug import (
     safer_reencode,
 )
 
-logger = getLogger()
+logger = get_logger()
 options = [
     "debug",
     "name",
@@ -79,20 +79,34 @@ def get_kolibri_url_for(file_id: str, ext: str):
     return f"{STUDIO_URL}/content/storage/{remote_path}", fname
 
 
-def read_from_zip(ark, member, as_text: Optional[bool] = True):
-    data = ark.open(member).read()
-    return data.decode("utf-8") if as_text else data
+def read_from_zip_as_bytes(ark, member):
+    return ark.open(member).read()
+
+
+def read_from_zip_as_text(ark, member):
+    return read_from_zip_as_bytes(ark, member).decode("utf-8")
 
 
 class Kolibri2Zim:
     def __init__(self, **kwargs):
-
         for option in options:
             if option not in kwargs:
-                raise ValueError(f"Missing parameter `{option}`")
+                msg = f"Missing parameter `{option}`"
+                raise ValueError(msg)
 
         def go(option):
-            return kwargs.get(option)
+            res = kwargs.get(option)
+            if type(res) is str:
+                return res
+            else:
+                return None
+
+        def gom(option):
+            res = go(option)
+            if not res:
+                msg = f"Unexpected kind of option for {option}"
+                raise Exception(msg)
+            return res
 
         self.channel_id = go("channel_id")
         self.root_id = go("root_id")
@@ -104,9 +118,11 @@ class Kolibri2Zim:
 
         # zim params
         self.fname = go("fname")
-        self.tags = (
-            [] if go("tags") is None else [t.strip() for t in go("tags").split(",")]
-        )
+        tags = go("tags")
+        if tags is None:
+            self.tags = []
+        else:
+            self.tags = [t.strip() for t in tags.split(",")]
         self.title = go("title")
         self.description = go("description")
         self.author = go("creator")
@@ -119,14 +135,14 @@ class Kolibri2Zim:
         self.css = go("css")
 
         # directory setup
-        self.output_dir = Path(go("output_dir")).expanduser().resolve()
+        self.output_dir = Path(str(go("output_dir"))).expanduser().resolve()
         if go("tmp_dir"):
-            Path(go("tmp_dir")).mkdir(parents=True, exist_ok=True)
+            Path(str(go("tmp_dir"))).mkdir(parents=True, exist_ok=True)
         self.build_dir = Path(tempfile.mkdtemp(dir=go("tmp_dir")))
 
         # performances options
-        self.nb_threads = go("threads")
-        self.nb_processes = go("processes")
+        self.nb_threads = int(gom("threads"))
+        self.nb_processes = int(gom("processes"))
         self.s3_url_with_credentials = go("s3_url_with_credentials")
         self.s3_storage = None
         self.dedup_html_files = go("dedup_html_files")
@@ -136,8 +152,9 @@ class Kolibri2Zim:
         self.keep_build_dir = go("keep_build_dir")
         self.debug = go("debug")
         self.only_topics = go("only_topics")
+        node_ids = go("node_ids")
         self.node_ids = (
-            None if go("node_ids") is None else [t.strip() for t in go("node_ids").split(",")]
+            None if node_ids is None else [t.strip() for t in node_ids.split(",")]
         )
 
         # jinja2 environment setup
@@ -265,12 +282,10 @@ class Kolibri2Zim:
 
         # add to zim
         with self.creator_lock:
-            self.creator.add_item(
-                StaticItem(
-                    path=path,
-                    fileobj=fileobj,
-                    mimetype=preset.mimetype,
-                )
+            self.creator.add_item_for(
+                path=path,
+                content=fileobj.read(),
+                mimetype=preset.mimetype,
             )
         logger.debug(f"Added {path} from S3::{key}")
         return True
@@ -305,7 +320,10 @@ class Kolibri2Zim:
         )
         with self.creator_lock:
             self.creator.add_item_for(
-                path=node_id, title=node["title"], content=html, mimetype="text/html"
+                path=node_id,
+                title=node["title"],
+                content=html.encode(),
+                mimetype="text/html",
             )
         logger.debug(f"Added topic #{node_id}")
 
@@ -317,24 +335,23 @@ class Kolibri2Zim:
         subtitle files (`video_subtitle`) are VTT files and are only limited by the
         number of language to select from in kolibri studio"""
 
-        files = self.db.get_node_files(node_id, thumbnail=False)
-        if not files:
+        files = list(self.db.get_node_files(node_id, thumbnail=False))
+        if len(files) == 0:
             return
         files = sorted(files, key=lambda f: f["prio"])
-        it = filter(lambda f: f["supp"] == 0, files)
+        it: list[dict[str, Any]] = list(filter(lambda f: f["supp"] == 0, files))
 
-        try:
-            # find main video file
-            video_file = next(it)
-        except StopIteration:
+        if len(it) == 0:
             # we have no video file
             return
-
-        try:
-            alt_video_file = next(it)
-        except StopIteration:
+        elif len(it) == 1:
             # we have no supplementary video file (which is OK)
+            video_file = it[0]
             alt_video_file = None
+        else:
+            # we have video and alt video
+            video_file = it[0]
+            alt_video_file = it[1]
 
         # now decide which file to keep and what to do with it
 
@@ -388,7 +405,9 @@ class Kolibri2Zim:
 
         # we want mp4, either in high-q or we have a low_res file to use
         else:
-            video_file = alt_video_file if self.low_quality else video_file
+            video_file = (
+                alt_video_file if self.low_quality and alt_video_file else video_file
+            )
             self.funnel_file(video_file["id"], video_file["ext"])
             video_filename = filename_for(video_file)
             video_filename_ext = video_file["ext"]
@@ -401,14 +420,14 @@ class Kolibri2Zim:
                 local, english = find_language_names(file["lang"])
             except Exception:
                 english = file["lang"]
-            finally:
-                subtitles.append(
-                    {
-                        "code": file["lang"],
-                        "name": english,
-                        "filename": filename_for(file),
-                    }
-                )
+
+            subtitles.append(
+                {
+                    "code": file["lang"],
+                    "name": english,
+                    "filename": filename_for(file),
+                }
+            )
 
         node = self.db.get_node(node_id, with_parents=True)
         html = self.jinja2_env.get_template("video.html").render(
@@ -424,7 +443,7 @@ class Kolibri2Zim:
             self.creator.add_item_for(
                 path=node_id,
                 title=node["title"],
-                content=html,
+                content=html.encode(),
                 mimetype="text/html",
             )
         logger.debug(f"Added video #{node_id}")
@@ -435,7 +454,10 @@ class Kolibri2Zim:
         logs error in case of failure"""
         if future.cancelled():
             return
-        src_fname, dst_fpath, path = self.videos_futures.get(future)
+        res = self.videos_futures.get(future)
+        if not res:
+            return
+        src_fname, dst_fpath, path = res
 
         try:
             future.result()
@@ -494,7 +516,10 @@ class Kolibri2Zim:
         """add file from item to uploads list"""
         path = item.path
         del item
-        dest_fpath, key, meta = self.pending_upload.get(path)
+        res = self.pending_upload.get(path)
+        if not res:
+            return
+        dest_fpath, key, meta = res
         # TODO: submit to a thread executor (to create) instead
         # this is currently called on main-tread.
         self.upload_to_s3(key, dest_fpath, **meta)
@@ -521,7 +546,7 @@ class Kolibri2Zim:
             self.creator.add_item_for(
                 path=node_id,
                 title=node["title"],
-                content=html,
+                content=html.encode(),
                 mimetype="text/html",
             )
         logger.debug(f"Added audio #{node_id}")
@@ -554,7 +579,7 @@ class Kolibri2Zim:
         if manifest_name not in zip_ark.namelist():
             logger.error(f"Excercise node without {manifest_name}")
             return
-        manifest = json.loads(read_from_zip(zip_ark, manifest_name))
+        manifest = json.loads(read_from_zip_as_bytes(zip_ark, manifest_name))
 
         # copy exercise content, rewriting internal paths
         # all internal resources to be stored under {node_id}/ prefix
@@ -562,14 +587,14 @@ class Kolibri2Zim:
         for assessment_item in manifest.get("all_assessment_items", []):
             item_path = f"{assessment_item}.json"
             if item_path in zip_ark.namelist():
-                perseus_content = read_from_zip(zip_ark, item_path)
+                perseus_content = read_from_zip_as_text(zip_ark, item_path)
                 perseus_content = perseus_content.replace(
                     r"web+graphie:${☣ LOCALPATH}", f"web+graphie:./{node_id}"
                 )
                 perseus_content = perseus_content.replace(
                     r"${☣ LOCALPATH}", f"./{node_id}"
                 )
-            assessment_items.append(perseus_content)
+                assessment_items.append(perseus_content)
 
         # add all support files to ZIM
         for ark_member in zip_ark.namelist():
@@ -581,12 +606,12 @@ class Kolibri2Zim:
                 self.creator.add_item_for(
                     path=path,
                     title="",
-                    content=read_from_zip(zip_ark, ark_member, as_text=False),
+                    content=read_from_zip_as_bytes(zip_ark, ark_member),
                 )
             logger.debug(f"Added exercise support file {path}")
 
         # prepare and add exercise HTML article
-        node = self.db.get_node(node_id, with_parents=True)
+        node = self.db.get_node(node_id, with_parents=True, with_children=False)
         html = self.jinja2_env.get_template("perseus_exercise.html").render(
             node_id=node_id,
             perseus_content=f"[{', '.join(assessment_items)}]",
@@ -595,7 +620,10 @@ class Kolibri2Zim:
         )
         with self.creator_lock:
             self.creator.add_item_for(
-                path=node_id, title=node["title"], content=html, mimetype="text/html"
+                path=node_id,
+                title=node["title"],
+                content=html.encode(),
+                mimetype="text/html",
             )
         logger.debug(f"Added exercise node #{node_id}")
 
@@ -671,7 +699,7 @@ class Kolibri2Zim:
                 self.creator.add_item_for(
                     path=path,
                     title=node["title"],
-                    content=html,
+                    content=html.encode(),
                     mimetype="text/html",
                 )
         logger.debug(f"Added document #{node_id}")
@@ -709,7 +737,7 @@ class Kolibri2Zim:
 
             # calculate hash of file and add entry if not in zim already
             content = zip_ark.open(ark_member).read()
-            content_hash = hashlib.md5(content).hexdigest()  # nosec
+            content_hash = hashlib.md5(content).hexdigest()  # nosec # noqa: S324
 
             if content_hash not in self.html_files_cache:
                 self.html_files_cache.append(content_hash)
@@ -730,7 +758,8 @@ class Kolibri2Zim:
 
     def run(self):
         if self.s3_url_with_credentials and not self.s3_credentials_ok():
-            raise ValueError("Unable to connect to Optimization Cache. Check its URL.")
+            msg = "Unable to connect to Optimization Cache. Check its URL."
+            raise ValueError(msg)
 
         s3_msg = (
             f"  using cache: {self.s3_storage.url.netloc} "
@@ -770,19 +799,34 @@ class Kolibri2Zim:
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
         self.creator_lock = threading.Lock()
+        if not self.root_id:
+            logger.error("Missing root id")
+            return 1
+        if not self.title:
+            logger.error("Missing title")
+            return 1
+        if not self.description:
+            logger.error("Missing description")
+            return 1
+        if not self.author:
+            logger.error("Missing author")
+            return 1
+        if not self.publisher:
+            logger.error("Missing publisher")
+            return 1
         self.creator = Creator(
-            filename=self.output_dir.joinpath(self.fname),
+            filename=self.output_dir.joinpath(self.clean_fname),
             main_path=self.root_id,
             ignore_duplicates=True,
         )
         self.creator.config_metadata(
-            Name=self.name,
+            Name=self.clean_fname,
             Language="eng",
             Title=self.title,
             Description=self.description,
             Creator=self.author,
             Publisher=self.publisher,
-            Date=datetime.date.today().strftime("%Y-%d-%m"),
+            Date=datetime.datetime.now(datetime.UTC).strftime("%Y-%d-%m"),
             Illustration_48x48_at_1=self.favicon_fpath.read_bytes(),
         )
         self.creator.start()
@@ -830,8 +874,9 @@ class Kolibri2Zim:
                     f"FAILURE not_done={len(result.not_done)} done={len(result.done)}"
                 )
                 for future in result.done:
-                    if future.exception():
-                        raise future.exception()
+                    future_exception = future.exception()
+                    if future_exception:
+                        raise future_exception
         except KeyboardInterrupt:
             self.creator.can_finish = False
             logger.error("KeyboardInterrupt, exiting.")
@@ -887,18 +932,21 @@ class Kolibri2Zim:
         channel_meta = self.db.get_channel_metadata(self.channel_id)
 
         # input  & metadata sanitation
-        period = datetime.datetime.now().strftime("%Y-%m")
+        period = datetime.datetime.now(datetime.UTC).strftime("%Y-%m")
         if self.fname:
             # make sure we were given a filename and not a path
-            self.fname = Path(self.fname.format(period=period))
-            if Path(self.fname.name) != self.fname:
-                raise ValueError(f"filename is not a filename: {self.fname}")
+            fname_path = Path(self.fname.format(period=period)).resolve()
+            if not fname_path.is_file():
+                msg = f"filename is not a filename: {self.fname}"
+                raise ValueError(msg)
+            self.clean_fname = fname_path.as_posix()
         else:
-            self.fname = f"{self.name}_{period}.zim"
+            self.clean_fname = f"{self.name}_{period}.zim"
 
         if not self.title:
-            self.title = channel_meta["name"]
-        self.title = self.title.strip()
+            self.clean_title = channel_meta["name"].strip()
+        else:
+            self.clean_title = self.title.strip()
 
         if not self.description:
             self.description = channel_meta["description"]
@@ -969,18 +1017,24 @@ class Kolibri2Zim:
 
         if self.about:
             # if user provided a custom about page, use it
-            with open(
-                handle_user_provided_file(
-                    source=self.about, in_dir=self.build_dir, nocopy=True
-                ),
-                "r",
-            ) as fh:
-                soup = BeautifulSoup(fh.read(), "lxml")
-                title = soup.find("title").text
-                content = soup.select("body > .container")
-                # we're only interested in the first one
-                if isinstance(content, list):
-                    content = content[0]
+            user_provided_file = handle_user_provided_file(
+                source=self.about, in_dir=self.build_dir, nocopy=True
+            )
+            if not user_provided_file:
+                title = channel_meta["name"]
+                content = None
+            else:
+                with open(user_provided_file) as fh:
+                    soup = BeautifulSoup(fh.read(), "lxml")
+                    title = soup.find("title")
+                    if not title:
+                        msg = "Failed to extract title"
+                        raise Exception(msg)
+                    title = title.text
+                    content = soup.select("body > .container")
+                    # we're only interested in the first one
+                    if isinstance(content, list):
+                        content = content[0]
         else:
             title = channel_meta["name"]
             content = None
@@ -992,23 +1046,26 @@ class Kolibri2Zim:
             self.creator.add_item_for(
                 path="about",
                 title=title,
-                content=html,
+                content=html.encode(),
                 mimetype="text/html",
             )
         del html
 
         # if user provided a custom CSS file, use it
         if self.css:
-            with open(
-                handle_user_provided_file(
-                    source=self.css, in_dir=self.build_dir, nocopy=True
-                ),
-                "r",
-            ) as fh:
-                content = fh.read()
+            user_provided_file = handle_user_provided_file(
+                source=self.css, in_dir=self.build_dir, nocopy=True
+            )
+            if not user_provided_file:
+                content = ""
+            else:
+                with open(user_provided_file) as fh:
+                    content = fh.read()
         # otherwise, create a blank one
         else:
             content = ""
 
-        self.creator.add_item_for("custom.css", content=content, mimetype="text/css")
+        self.creator.add_item_for(
+            "custom.css", content=content.encode(), mimetype="text/css"
+        )
         logger.debug("Added about page and custom CSS")

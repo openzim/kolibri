@@ -11,7 +11,7 @@ from zimscraperlib.logging import getLogger as lib_getLogger
 ROOT_DIR = pathlib.Path(__file__).parent
 NAME = ROOT_DIR.name
 
-with open(ROOT_DIR.joinpath("VERSION"), "r") as fh:
+with open(ROOT_DIR.joinpath("VERSION")) as fh:
     VERSION = fh.read().strip()
 
 SCRAPER = f"{NAME} {VERSION}"
@@ -25,7 +25,7 @@ def is_running_inside_container():
     if not fpath.exists():
         return False
     try:
-        with open(fpath, "r") as fh:
+        with open(fpath) as fh:
             for line in fh.readlines():
                 if line.strip().rsplit(":", 1)[-1] != "/":
                     return True
@@ -37,6 +37,7 @@ def is_running_inside_container():
 class Global:
     debug = False
     inside_container = is_running_inside_container()
+    nb_available_cpus: int
 
 
 Global.nb_available_cpus = (
@@ -44,11 +45,11 @@ Global.nb_available_cpus = (
 )
 
 
-def setDebug(debug):
+def set_debug(debug):
     """toggle constants global DEBUG flag (used by getLogger)"""
     Global.debug = bool(debug)
 
 
-def getLogger():
+def get_logger():
     """configured logger respecting DEBUG flag"""
     return lib_getLogger(NAME, level=logging.DEBUG if Global.debug else logging.INFO)

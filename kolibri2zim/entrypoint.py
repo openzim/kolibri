@@ -189,8 +189,8 @@ def main():
     )
 
     args = parser.parse_args()
-    setDebug(args.debug)
-    logger = getLogger()
+    set_debug(args.debug)
+    logger = get_logger()
 
     from kolibri2zim.scraper import Kolibri2Zim
 

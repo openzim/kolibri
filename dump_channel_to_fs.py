@@ -35,7 +35,7 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger("dump-remote")
 
 
-def download_if_missing(url, fpath, fsize=None, force=False):
+def download_if_missing(url, fpath, fsize=None, *, force=False):
     skipped = (
         fpath.exists()
         and (fsize is not None and os.path.getsize(fpath) == fsize)
@@ -44,7 +44,7 @@ def download_if_missing(url, fpath, fsize=None, force=False):
     if not skipped:
         fpath.unlink(missing_ok=True)
         wget = subprocess.run(
-            [
+            [  # noqa: S603
                 "/usr/bin/env",
                 "wget",
                 "-t",
@@ -62,7 +62,8 @@ def download_if_missing(url, fpath, fsize=None, force=False):
         )
         if wget.returncode != 0:
             logger.error(wget.stdout)
-            raise Exception(f"wget exited with retcode {wget.returncode}")
+            msg = f"wget exited with retcode {wget.returncode}"
+            raise Exception(msg)
     return not skipped, url, fpath
 
 
@@ -89,12 +90,11 @@ def get_rows(db_path, query):
         cursor = conn.execute(query)
         rows = cursor.fetchmany()
         while rows:
-            for row in rows:
-                yield row
+            yield from rows
             rows = cursor.fetchmany()
 
 
-def dump(channel_id, build_dir=None, force=False):
+def dump(channel_id: str, build_dir: str | None, *, force: bool):
     build_path = pathlib.Path(build_dir or "build")
     logger.info(f"dumping {channel_id} into {build_path}")
     build_path.mkdir(exist_ok=True, parents=True)
@@ -112,7 +112,7 @@ def dump(channel_id, build_dir=None, force=False):
     nb_files = get_single_value(db_path, "SELECT COUNT(*) FROM content_file")
     logger.info(f"Looping over all {nb_files} files")
 
-    def on_error(*args, **kwargs):
+    def on_error(*args, **kwargs):  # noqa: ARG001
         logger.error("Failed to download something")
 
     def on_success(result):
@@ -145,8 +145,27 @@ def dump(channel_id, build_dir=None, force=False):
     logger.info("Done downloading files")
 
 
+CHANNEL_ID_POS_IN_ARGV = 2
+BUILD_DIR_POS_IN_ARGV = 3
+FORCE_POS_IN_ARGV = 4
+
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print("Missing channel ID")
+    if len(sys.argv) < CHANNEL_ID_POS_IN_ARGV:
+        logger.error("Missing channel ID")
         sys.exit(1)
-    dump(*sys.argv[1:])
+
+    channel_id = sys.argv[1]
+    if len(sys.argv) >= BUILD_DIR_POS_IN_ARGV:
+        build_dir = sys.argv[2]
+    else:
+        build_dir = None
+    if len(sys.argv) >= FORCE_POS_IN_ARGV:
+        force = (
+            sys.argv[3].lower() == "true"
+            or sys.argv[3].lower() == "force"
+            or sys.argv[3].lower() == "yes"
+        )
+    else:
+        force = False
+
+    dump(channel_id=channel_id, build_dir=build_dir, force=force)
