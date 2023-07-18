@@ -36,8 +36,7 @@ class KolibriDB:
 
         self.root = self.get_node(root_id)
         if not self.root:
-            msg = f"No node for root-id {root_id}"
-            raise ValueError(msg)
+            raise ValueError(f"No node for root-id {root_id}")
 
     @property
     def fpath(self):

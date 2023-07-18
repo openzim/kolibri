@@ -16,7 +16,7 @@ jobs:
       - name: Set up Python 3.11
         uses: actions/setup-python@v4.6.1
         with:
-          python-version: "3.11"
+          python-version-file: "pyproject.toml"
           architecture: x64
 
       - name: Build packages
@@ -26,16 +26,6 @@ jobs:
 
       - name: Upload to PyPI
         uses: pypa/gh-action-pypi-publish@v1.8.6
-        # dont specify anything for Trusted Publishing
-        # https://docs.pypi.org/trusted-publishers
-        # with:
-        #  # Using token
-        #  user: __token__
-        #  password: ${{ secrets.PYPI_API_TOKEN }}
-        #
-        #  # Using token on test index
-        #  password: ${{ secrets.PYPI_TEST_API_TOKEN }}
-        #  repository_url: https://test.pypi.org/legacy/
 
       - name: Build and push Docker image
         uses: openzim/docker-publish-action@v10
@@ -46,7 +36,8 @@ jobs:
           latest-on-tag: true
           restrict-to: openzim/kolibri
           registries: ghcr.io
-          credentials: GHCRIO_USERNAME=${{ secrets.GHCR_USERNAME }}
+          credentials:
+            GHCRIO_USERNAME=${{ secrets.GHCR_USERNAME }}
             GHCRIO_TOKEN=${{ secrets.GHCR_TOKEN }}
           repo_description: auto
           repo_overview: auto

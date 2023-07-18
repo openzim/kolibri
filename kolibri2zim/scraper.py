@@ -91,8 +91,7 @@ class Kolibri2Zim:
     def __init__(self, **kwargs):
         for option in options:
             if option not in kwargs:
-                msg = f"Missing parameter `{option}`"
-                raise ValueError(msg)
+                raise ValueError(f"Missing parameter `{option}`")
 
         def go(option):
             res = kwargs.get(option)
@@ -104,8 +103,7 @@ class Kolibri2Zim:
         def gom(option):
             res = go(option)
             if not res:
-                msg = f"Unexpected kind of option for {option}"
-                raise Exception(msg)
+                raise Exception(f"Unexpected kind of option for {option}")
             return res
 
         self.channel_id = go("channel_id")
@@ -758,8 +756,7 @@ class Kolibri2Zim:
 
     def run(self):
         if self.s3_url_with_credentials and not self.s3_credentials_ok():
-            msg = "Unable to connect to Optimization Cache. Check its URL."
-            raise ValueError(msg)
+            raise ValueError("Unable to connect to Optimization Cache. Check its URL.")
 
         s3_msg = (
             f"  using cache: {self.s3_storage.url.netloc} "
@@ -937,8 +934,7 @@ class Kolibri2Zim:
             # make sure we were given a filename and not a path
             fname_path = Path(self.fname.format(period=period)).resolve()
             if not fname_path.is_file():
-                msg = f"filename is not a filename: {self.fname}"
-                raise ValueError(msg)
+                raise ValueError(f"filename is not a filename: {self.fname}")
             self.clean_fname = fname_path.as_posix()
         else:
             self.clean_fname = f"{self.name}_{period}.zim"
@@ -1028,8 +1024,7 @@ class Kolibri2Zim:
                     soup = BeautifulSoup(fh.read(), "lxml")
                     title = soup.find("title")
                     if not title:
-                        msg = "Failed to extract title"
-                        raise Exception(msg)
+                        raise Exception("Failed to extract title")
                     title = title.text
                     content = soup.select("body > .container")
                     # we're only interested in the first one

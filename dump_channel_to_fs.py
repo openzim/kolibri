@@ -62,8 +62,7 @@ def download_if_missing(url, fpath, fsize=None, *, force=False):
         )
         if wget.returncode != 0:
             logger.error(wget.stdout)
-            msg = f"wget exited with retcode {wget.returncode}"
-            raise Exception(msg)
+            raise Exception(f"wget exited with retcode {wget.returncode}")
     return not skipped, url, fpath
 
 
