@@ -935,7 +935,7 @@ class Kolibri2Zim:
             fname_path = Path(self.fname.format(period=period)).resolve()
             if not fname_path.is_file():
                 raise ValueError(f"filename is not a filename: {self.fname}")
-            self.clean_fname = fname_path.as_posix()
+            self.clean_fname = str(fname_path)
         else:
             self.clean_fname = f"{self.name}_{period}.zim"
 
