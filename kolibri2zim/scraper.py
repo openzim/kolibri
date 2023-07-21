@@ -13,7 +13,6 @@ import tempfile
 import threading
 import zipfile
 from pathlib import Path
-from typing import Any
 
 import jinja2
 from bs4 import BeautifulSoup
@@ -125,9 +124,10 @@ class Kolibri2Zim:
 
         # directory setup
         self.output_dir = Path(str(go("output_dir"))).expanduser().resolve()
-        if go("tmp_dir"):
-            Path(str(go("tmp_dir"))).mkdir(parents=True, exist_ok=True)
-        self.build_dir = Path(tempfile.mkdtemp(dir=go("tmp_dir")))
+        tmp_dir = go("tmp_dir")
+        if tmp_dir:
+            Path(tmp_dir).mkdir(parents=True, exist_ok=True)
+        self.build_dir = Path(tempfile.mkdtemp(dir=tmp_dir))
 
         # performances options
         nb_threads_str = go("threads")
@@ -273,11 +273,12 @@ class Kolibri2Zim:
 
         # add to zim
         with self.creator_lock:
-            self.creator.add_item_for(
-                path=path,
-                content=fileobj.read(),
-                mimetype=preset.mimetype,
-            )
+            kwargs = {
+                "path": path,
+                "fileobj": fileobj,
+                "mimetype": preset.mimetype,
+            }
+            self.creator.add_item_for(StaticItem(**kwargs))
         logger.debug(f"Added {path} from S3::{key}")
         return True
 
@@ -326,23 +327,23 @@ class Kolibri2Zim:
         subtitle files (`video_subtitle`) are VTT files and are only limited by the
         number of language to select from in kolibri studio"""
 
-        files = list(self.db.get_node_files(node_id, thumbnail=False))
-        if len(files) == 0:
+        files = self.db.get_node_files(node_id, thumbnail=False)
+        if not files:
             return
         files = sorted(files, key=lambda f: f["prio"])
-        it: list[dict[str, Any]] = list(filter(lambda f: f["supp"] == 0, files))
-
-        if len(it) == 0:
+        it = filter(lambda f: f["supp"] == 0, files)
+        try:
+            # find main video file
+            video_file = next(it)
+        except StopIteration:
             # we have no video file
             return
-        elif len(it) == 1:
+
+        try:
+            alt_video_file = next(it)
+        except StopIteration:
             # we have no supplementary video file (which is OK)
-            video_file = it[0]
             alt_video_file = None
-        else:
-            # we have video and alt video
-            video_file = it[0]
-            alt_video_file = it[1]
 
         # now decide which file to keep and what to do with it
 
@@ -445,10 +446,10 @@ class Kolibri2Zim:
         logs error in case of failure"""
         if future.cancelled():
             return
-        res = self.videos_futures.get(future)
-        if not res:
+        try:
+            src_fname, dst_fpath, path = self.videos_futures[future]
+        except KeyError:
             return
-        src_fname, dst_fpath, path = res
 
         try:
             future.result()
@@ -507,10 +508,10 @@ class Kolibri2Zim:
         """add file from item to uploads list"""
         path = item.path
         del item
-        res = self.pending_upload.get(path)
-        if not res:
+        try:
+            dest_fpath, key, meta = self.pending_upload[path]
+        except KeyError:
             return
-        dest_fpath, key, meta = res
         # TODO: submit to a thread executor (to create) instead
         # this is currently called on main-tread.
         self.upload_to_s3(key, dest_fpath, **meta)
@@ -908,17 +909,16 @@ class Kolibri2Zim:
         period = datetime.datetime.now(datetime.UTC).strftime("%Y-%m")
         if self.fname:
             # make sure we were given a filename and not a path
-            fname_path = Path(self.fname.format(period=period)).resolve()
-            if not fname_path.is_file():
-                raise ValueError(f"filename is not a filename: {self.fname}")
+            fname_path = Path(str(self.fname).format(period=period))
+            if Path(fname_path.name) != fname_path:
+                raise ValueError(f"filename is not a filename: {fname_path}")
             self.clean_fname = str(fname_path)
         else:
             self.clean_fname = f"{self.name}_{period}.zim"
 
         if not self.title:
-            self.clean_title = channel_meta["name"].strip()
-        else:
-            self.clean_title = self.title.strip()
+            self.title = channel_meta["name"]
+        self.title = self.title.strip()
 
         if not self.description:
             self.description = channel_meta["description"]

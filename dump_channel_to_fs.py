@@ -144,27 +144,13 @@ def dump(channel_id: str, build_dir: str | None, *, force: bool):
     logger.info("Done downloading files")
 
 
-CHANNEL_ID_POS_IN_ARGV = 2
-BUILD_DIR_POS_IN_ARGV = 3
-FORCE_POS_IN_ARGV = 4
-
 if __name__ == "__main__":
-    if len(sys.argv) < CHANNEL_ID_POS_IN_ARGV:
+    args = [sys.argv[idx] if len(sys.argv) >= idx + 1 else None for idx in range(4)]
+    _, channel_id, build_dir, force = args
+
+    if not channel_id:
         logger.error("Missing channel ID")
         sys.exit(1)
-
-    channel_id = sys.argv[1]
-    if len(sys.argv) >= BUILD_DIR_POS_IN_ARGV:
-        build_dir = sys.argv[2]
-    else:
-        build_dir = None
-    if len(sys.argv) >= FORCE_POS_IN_ARGV:
-        force = (
-            sys.argv[3].lower() == "true"
-            or sys.argv[3].lower() == "force"
-            or sys.argv[3].lower() == "yes"
-        )
-    else:
-        force = False
+    force = bool(str(force).lower() in ("true", "force", "yes"))
 
     dump(channel_id=channel_id, build_dir=build_dir, force=force)
