@@ -11,12 +11,12 @@ jobs:
       id-token: write # mandatory for PyPI trusted publishing
 
     steps:
-      - uses: actions/checkout@v3.5.3
+      - uses: actions/checkout@v3
 
       - name: Set up Python 3.11
-        uses: actions/setup-python@v4.6.1
+        uses: actions/setup-python@v4
         with:
-          python-version-file: "pyproject.toml"
+          python-version-file: pyproject.toml
           architecture: x64
 
       - name: Build packages
@@ -25,7 +25,7 @@ jobs:
           python -m build sdist wheel
 
       - name: Upload to PyPI
-        uses: pypa/gh-action-pypi-publish@v1.8.6
+        uses: pypa/gh-action-pypi-publish@release/v1.8
 
       - name: Build and push Docker image
         uses: openzim/docker-publish-action@v10
