@@ -19,7 +19,7 @@ jobs:
       - name: Install dependencies (and project)
         run: |
           pip install -U pip
-          pip install -e .[lint,scripts,test]
+          pip install -e .[lint,check,scripts,test]
 
       - name: Check black formatting
         run: inv lint-black
