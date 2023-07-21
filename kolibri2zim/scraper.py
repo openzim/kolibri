@@ -797,7 +797,7 @@ class Kolibri2Zim:
             Creator=self.author,
             Publisher=self.publisher,
             Date=datetime.datetime.now(datetime.UTC).strftime("%Y-%d-%m"),
-            Illustration_48x48_at_1=self.favicon_fpath.read_bytes(),
+            Illustration_48x48_at_1=self.favicon_48_fpath.read_bytes(),
         )
         self.creator.start()
 
@@ -957,27 +957,23 @@ class Kolibri2Zim:
                 )
 
         # convert to PNG (might already be PNG but it's OK)
-        favicon_fpath = favicon_orig.with_suffix(".png")
-        convert_image(favicon_orig, favicon_fpath)
+        self.favicon_48_fpath = favicon_orig.with_suffix(".48.png")
+        convert_image(favicon_orig, self.favicon_48_fpath)
+
+        self.favicon_96_fpath = favicon_orig.with_suffix(".96.png")
+        convert_image(favicon_orig, self.favicon_96_fpath)
 
         # resize to appropriate size (ZIM uses 48x48 so we double for retina)
-        for size in (96, 48):
-            resize_image(favicon_fpath, width=size, height=size, method="thumbnail")
-            with open(favicon_fpath, "rb") as fh:
-                self.creator.add_illustration(size, fh.read())
-
-        # resize to appropriate size (ZIM uses 48x48)
-        resize_image(favicon_fpath, width=96, height=96, method="thumbnail")
+        resize_image(self.favicon_48_fpath, width=48, height=48, method="thumbnail")
+        resize_image(self.favicon_96_fpath, width=96, height=96, method="thumbnail")
 
         # generate favicon
-        favicon_ico_path = favicon_fpath.with_suffix(".ico")
-        create_favicon(src=favicon_fpath, dst=favicon_ico_path)
-
-        self.favicon_fpath = favicon_fpath
-        self.favicon_ico_path = favicon_ico_path
+        self.favicon_ico_path = favicon_orig.with_suffix(".ico")
+        create_favicon(src=self.favicon_96_fpath, dst=self.favicon_ico_path)
 
     def add_favicon(self):
-        self.creator.add_item_for("favicon.png", fpath=self.favicon_fpath)
+        self.creator.add_illustration(96, self.favicon_96_fpath.read_bytes())
+        self.creator.add_item_for("favicon.png", fpath=self.favicon_96_fpath)
         self.creator.add_item_for("favicon.ico", fpath=self.favicon_ico_path)
 
     def add_custom_about_and_css(self):
