@@ -100,12 +100,6 @@ class Kolibri2Zim:
             else:
                 return None
 
-        def gom(option):
-            res = go(option)
-            if not res:
-                raise Exception(f"Unexpected kind of option for {option}")
-            return res
-
         self.channel_id = go("channel_id")
         self.root_id = go("root_id")
 
@@ -139,8 +133,10 @@ class Kolibri2Zim:
         self.build_dir = Path(tempfile.mkdtemp(dir=go("tmp_dir")))
 
         # performances options
-        self.nb_threads = int(gom("threads"))
-        self.nb_processes = int(gom("processes"))
+        nb_threads_str = go("threads")
+        self.nb_threads = int(nb_threads_str) if nb_threads_str else None
+        nb_processes_str = go("processes")
+        self.nb_processes = int(nb_processes_str) if nb_processes_str else None
         self.s3_url_with_credentials = go("s3_url_with_credentials")
         self.s3_storage = None
         self.dedup_html_files = go("dedup_html_files")
