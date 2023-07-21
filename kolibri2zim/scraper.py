@@ -7,6 +7,7 @@ import datetime
 import hashlib
 import io
 import json
+import os
 import shutil
 import tempfile
 import threading
@@ -751,24 +752,7 @@ class Kolibri2Zim:
         logger.debug(f"Added HTML5 node #{node_id}")
 
     def run(self):
-        if self.s3_url_with_credentials and not self.s3_credentials_ok():
-            raise ValueError("Unable to connect to Optimization Cache. Check its URL.")
-
-        s3_msg = (
-            f"  using cache: {self.s3_storage.url.netloc} "
-            f"with bucket: {self.s3_storage.bucket_name}"
-            if self.s3_storage
-            else ""
-        )
-        logger.info(
-            f"Starting scraper with:\n"
-            f"  channel_id: {self.channel_id}\n"
-            f"  build_dir: {self.build_dir}\n"
-            f"  output_dir: {self.output_dir}\n"
-            f"  using webm : {self.use_webm}\n"
-            f"  low_quality : {self.low_quality}\n"
-            f"{s3_msg}"
-        )
+        self.ensure_js_deps_are_present()
 
         logger.info("Download database")
         self.download_db()
@@ -1058,3 +1042,51 @@ class Kolibri2Zim:
 
         self.creator.add_item_for("custom.css", content=content, mimetype="text/css")
         logger.debug("Added about page and custom CSS")
+
+    def ensure_js_deps_are_present(self):
+        for js_deps_file in [
+            "epub.min.js",
+            "jszip.min.js",
+            "jquery.min.js",
+            "videojs-ogvjs.js",
+        ]:
+            if not os.path.exists(
+                self.templates_dir.joinpath(f"assets/{js_deps_file}")
+            ):
+                raise ValueError(
+                    "It looks like JS deps have not been installed,"
+                    f" {js_deps_file} is missing"
+                )
+
+        for js_deps_dir in [
+            "pdfjs",
+            "videojs",
+            "ogvjs",
+            "bootstrap",
+            "bootstrap-icons",
+            "perseus",
+        ]:
+            if not os.path.exists(self.templates_dir.joinpath(f"assets/{js_deps_dir}")):
+                raise ValueError(
+                    "It looks like JS deps have not been installed,"
+                    f" {js_deps_dir} is missing"
+                )
+
+        if self.s3_url_with_credentials and not self.s3_credentials_ok():
+            raise ValueError("Unable to connect to Optimization Cache. Check its URL.")
+
+        s3_msg = (
+            f"  using cache: {self.s3_storage.url.netloc} "
+            f"with bucket: {self.s3_storage.bucket_name}"
+            if self.s3_storage
+            else ""
+        )
+        logger.info(
+            f"Starting scraper with:\n"
+            f"  channel_id: {self.channel_id}\n"
+            f"  build_dir: {self.build_dir}\n"
+            f"  output_dir: {self.output_dir}\n"
+            f"  using webm : {self.use_webm}\n"
+            f"  low_quality : {self.low_quality}\n"
+            f"{s3_msg}"
+        )
