@@ -809,7 +809,7 @@ class Kolibri2Zim:
             ),
             Creator=self.author,
             Publisher=self.publisher,
-            Date=datetime.datetime.now(datetime.UTC).strftime("%Y-%d-%m"),
+            Date=datetime.datetime.now(datetime.UTC),
             Illustration_48x48_at_1=self.favicon_48_fpath.read_bytes(),
         )
         self.creator.start()
