@@ -320,7 +320,7 @@ class Kolibri2Zim:
             self.creator.add_item_for(
                 path=node_id,
                 title=node["title"],
-                content=html.encode(),
+                content=html,
                 mimetype="text/html",
             )
         logger.debug(f"Added topic #{node_id}")
@@ -441,7 +441,7 @@ class Kolibri2Zim:
             self.creator.add_item_for(
                 path=node_id,
                 title=node["title"],
-                content=html.encode(),
+                content=html,
                 mimetype="text/html",
             )
         logger.debug(f"Added video #{node_id}")
@@ -544,7 +544,7 @@ class Kolibri2Zim:
             self.creator.add_item_for(
                 path=node_id,
                 title=node["title"],
-                content=html.encode(),
+                content=html,
                 mimetype="text/html",
             )
         logger.debug(f"Added audio #{node_id}")
@@ -620,7 +620,7 @@ class Kolibri2Zim:
             self.creator.add_item_for(
                 path=node_id,
                 title=node["title"],
-                content=html.encode(),
+                content=html,
                 mimetype="text/html",
             )
         logger.debug(f"Added exercise node #{node_id}")
@@ -697,7 +697,7 @@ class Kolibri2Zim:
                 self.creator.add_item_for(
                     path=path,
                     title=node["title"],
-                    content=html.encode(),
+                    content=html,
                     mimetype="text/html",
                 )
         logger.debug(f"Added document #{node_id}")
@@ -1041,7 +1041,7 @@ class Kolibri2Zim:
             self.creator.add_item_for(
                 path="about",
                 title=title,
-                content=html.encode(),
+                content=html,
                 mimetype="text/html",
             )
         del html
@@ -1060,7 +1060,5 @@ class Kolibri2Zim:
         else:
             content = ""
 
-        self.creator.add_item_for(
-            "custom.css", content=content.encode(), mimetype="text/css"
-        )
+        self.creator.add_item_for("custom.css", content=content, mimetype="text/css")
         logger.debug("Added about page and custom CSS")
