@@ -18,6 +18,10 @@ import jinja2
 from bs4 import BeautifulSoup
 from kiwixstorage import KiwixStorage
 from pif import get_public_ip
+from zimscraperlib.constants import (
+    MAXIMUM_DESCRIPTION_METADATA_LENGTH,
+    MAXIMUM_LONG_DESCRIPTION_METADATA_LENGTH,
+)
 from zimscraperlib.filesystem import get_file_mimetype
 from zimscraperlib.i18n import find_language_names
 from zimscraperlib.image.convertion import convert_image, create_favicon
@@ -793,7 +797,16 @@ class Kolibri2Zim:
             Name=self.clean_fname,
             Language="eng",
             Title=self.title,
-            Description=self.description,
+            Description=(
+                f"{self.description[0:MAXIMUM_DESCRIPTION_METADATA_LENGTH-4]} ..."
+                if len(self.description) > MAXIMUM_DESCRIPTION_METADATA_LENGTH
+                else self.description
+            ),
+            LongDescription=(
+                f"{self.description[0:MAXIMUM_LONG_DESCRIPTION_METADATA_LENGTH-4]} ..."
+                if len(self.description) > MAXIMUM_LONG_DESCRIPTION_METADATA_LENGTH
+                else self.description
+            ),
             Creator=self.author,
             Publisher=self.publisher,
             Date=datetime.datetime.now(datetime.UTC).strftime("%Y-%d-%m"),
