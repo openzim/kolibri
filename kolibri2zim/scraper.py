@@ -992,16 +992,15 @@ class Kolibri2Zim:
                 title = channel_meta["name"]
                 content = None
             else:
-                with open(user_provided_file) as fh:
-                    soup = BeautifulSoup(fh.read(), "lxml")
-                    title = soup.find("title")
-                    if not title:
-                        raise Exception("Failed to extract title")
-                    title = title.text
-                    content = soup.select("body > .container")
-                    # we're only interested in the first one
-                    if isinstance(content, list):
-                        content = content[0]
+                soup = BeautifulSoup(user_provided_file.read_bytes(), "lxml")
+                title = soup.find("title")
+                if not title:
+                    raise Exception("Failed to extract title")
+                title = title.text
+                content = soup.select("body > .container")
+                # we're only interested in the first one
+                if isinstance(content, list):
+                    content = content[0]
         else:
             title = channel_meta["name"]
             content = None
@@ -1026,8 +1025,7 @@ class Kolibri2Zim:
             if not user_provided_file:
                 content = ""
             else:
-                with open(user_provided_file) as fh:
-                    content = fh.read()
+                content = user_provided_file.read_bytes()
         # otherwise, create a blank one
         else:
             content = ""
