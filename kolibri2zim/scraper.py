@@ -977,8 +977,8 @@ class Kolibri2Zim:
         convert_image(favicon_orig, self.favicon_96_fpath)
 
         # resize to appropriate size (ZIM uses 48x48 so we double for retina)
-        resize_image(self.favicon_48_fpath, width=48, height=48, method="thumbnail")
-        resize_image(self.favicon_96_fpath, width=96, height=96, method="thumbnail")
+        resize_image(self.favicon_48_fpath, width=48, height=48, method="contain")
+        resize_image(self.favicon_96_fpath, width=96, height=96, method="contain")
 
         # generate favicon
         self.favicon_ico_path = favicon_orig.with_suffix(".ico")
