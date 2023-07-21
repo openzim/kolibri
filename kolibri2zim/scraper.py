@@ -95,11 +95,7 @@ class Kolibri2Zim:
                 raise ValueError(f"Missing parameter `{option}`")
 
         def go(option):
-            res = kwargs.get(option)
-            if type(res) is str:
-                return res
-            else:
-                return None
+            return kwargs.get(option)
 
         self.channel_id = go("channel_id")
         self.root_id = go("root_id")

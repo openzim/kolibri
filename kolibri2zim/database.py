@@ -208,16 +208,7 @@ class KolibriDB:
             "ORDER BY priority ASC",
             (node_id, 1, 1 if thumbnail else 0),
         ):
-            yield {
-                "id": row["id"],
-                "fid": row["fid"],
-                "ext": row["ext"],
-                "prio": row["prio"],
-                "supp": row["supp"],
-                "checksum": row["checksum"],
-                "lang": row["lang"],
-                "preset": row["preset"],
-            }
+            yield dict(row)
 
     def get_node_thumbnail(self, node_id):
         return self.get_node_file(node_id, thumbnail=True)
