@@ -79,12 +79,8 @@ def get_kolibri_url_for(file_id: str, ext: str):
     return f"{STUDIO_URL}/content/storage/{remote_path}", fname
 
 
-def read_from_zip_as_bytes(ark, member):
+def read_from_zip(ark, member):
     return ark.open(member).read()
-
-
-def read_from_zip_as_text(ark, member):
-    return read_from_zip_as_bytes(ark, member).decode("utf-8")
 
 
 class Kolibri2Zim:
@@ -571,7 +567,7 @@ class Kolibri2Zim:
         if manifest_name not in zip_ark.namelist():
             logger.error(f"Excercise node without {manifest_name}")
             return
-        manifest = json.loads(read_from_zip_as_bytes(zip_ark, manifest_name))
+        manifest = json.loads(read_from_zip(zip_ark, manifest_name))
 
         # copy exercise content, rewriting internal paths
         # all internal resources to be stored under {node_id}/ prefix
@@ -579,7 +575,7 @@ class Kolibri2Zim:
         for assessment_item in manifest.get("all_assessment_items", []):
             item_path = f"{assessment_item}.json"
             if item_path in zip_ark.namelist():
-                perseus_content = read_from_zip_as_text(zip_ark, item_path)
+                perseus_content = read_from_zip(zip_ark, item_path).decode("utf-8")
                 perseus_content = perseus_content.replace(
                     r"web+graphie:${☣ LOCALPATH}", f"web+graphie:./{node_id}"
                 )
@@ -598,7 +594,7 @@ class Kolibri2Zim:
                 self.creator.add_item_for(
                     path=path,
                     title="",
-                    content=read_from_zip_as_bytes(zip_ark, ark_member),
+                    content=read_from_zip(zip_ark, ark_member),
                 )
             logger.debug(f"Added exercise support file {path}")
 
