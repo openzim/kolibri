@@ -34,6 +34,7 @@ dev = [
     "kolibri2zim[scripts]",
     "kolibri2zim[lint]",
     "kolibri2zim[check]",
+    "hatchling",
 ]
 
 [project.urls]
@@ -50,6 +51,9 @@ path = "kolibri2zim/__about__.py"
 exclude = ["/.github"]
 
 [tool.hatch.build.hooks.custom]
+enable-by-default = false
+path = "hatch_build.py"
+dependencies = ["zimscraperlib==3.1.0"]
 
 [tool.hatch.envs.default]
 features = ["dev"]
