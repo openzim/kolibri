@@ -19,8 +19,10 @@ from bs4 import BeautifulSoup
 from kiwixstorage import KiwixStorage
 from pif import get_public_ip
 from zimscraperlib.constants import (
-    MAXIMUM_DESCRIPTION_METADATA_LENGTH,
-    MAXIMUM_LONG_DESCRIPTION_METADATA_LENGTH,
+    MAXIMUM_DESCRIPTION_METADATA_LENGTH as MAX_DESC_LENGTH,
+)
+from zimscraperlib.constants import (
+    MAXIMUM_LONG_DESCRIPTION_METADATA_LENGTH as MAX_LONG_DESC_LENGTH,
 )
 from zimscraperlib.filesystem import get_file_mimetype
 from zimscraperlib.i18n import find_language_names
@@ -50,6 +52,7 @@ options = [
     "fname",
     "title",
     "description",
+    "long_description",
     "creator",
     "publisher",
     "tags",
@@ -113,6 +116,7 @@ class Kolibri2Zim:
             self.tags = [t.strip() for t in tags.split(",")]
         self.title = go("title")
         self.description = go("description")
+        self.long_description = go("long_description")
         self.author = go("creator")
         self.publisher = go("publisher")
         self.name = go("name")
@@ -797,16 +801,8 @@ class Kolibri2Zim:
             Name=self.clean_fname,
             Language="eng",
             Title=self.title,
-            Description=(
-                f"{self.description[0:MAXIMUM_DESCRIPTION_METADATA_LENGTH-4]} ..."
-                if len(self.description) > MAXIMUM_DESCRIPTION_METADATA_LENGTH
-                else self.description
-            ),
-            LongDescription=(
-                f"{self.description[0:MAXIMUM_LONG_DESCRIPTION_METADATA_LENGTH-4]} ..."
-                if len(self.description) > MAXIMUM_LONG_DESCRIPTION_METADATA_LENGTH
-                else self.description
-            ),
+            Description=self.description,
+            LongDescription=self.long_description,
             Creator=self.author,
             Publisher=self.publisher,
             Date=datetime.datetime.now(datetime.UTC),
@@ -930,8 +926,35 @@ class Kolibri2Zim:
         self.title = self.title.strip()
 
         if not self.description:
-            self.description = channel_meta["description"]
-        self.description = self.description.strip()
+            # User did not provided a description, we will infer it from channel
+            # metadata, limited to maximum length
+            if self.long_description:
+                raise ValueError(
+                    "long_description cannot be set if description is not set"
+                )
+            self.description = channel_meta["description"].strip()
+            if len(self.description) > MAX_DESC_LENGTH:
+                self.long_description = self.description
+                self.description = f"{self.description[0:MAX_DESC_LENGTH-1]}…"
+                if len(self.long_description > MAX_LONG_DESC_LENGTH):
+                    self.long_description = (
+                        f"{self.long_description[0:MAX_LONG_DESC_LENGTH-1]}…"
+                    )
+        else:
+            self.description = self.description.strip()
+            if len(self.description) > MAX_DESC_LENGTH:
+                raise ValueError(
+                    f"description is too long ({len(self.description)}"
+                    f">{MAX_DESC_LENGTH})"
+                )
+            if (
+                self.long_description
+                and len(self.long_description) > MAX_LONG_DESC_LENGTH
+            ):
+                raise ValueError(
+                    f"long_description is too long ({len(self.long_description)}"
+                    f">{MAX_LONG_DESC_LENGTH})"
+                )
 
         if not self.author:
             self.author = channel_meta["author"] or "Kolibri"

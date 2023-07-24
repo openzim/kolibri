@@ -48,6 +48,11 @@ def main():
     )
 
     parser.add_argument(
+        "--long-description",
+        help="Custom long description for your ZIM, optional",
+    )
+
+    parser.add_argument(
         "--favicon",
         help="URL/path for Favicon. Kolibri channel thumbnail otherwise "
         "or default Kolobri logo if missing",
