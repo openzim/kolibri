@@ -753,6 +753,25 @@ class Kolibri2Zim:
         logger.debug(f"Added HTML5 node #{node_id}")
 
     def run(self):
+        if self.s3_url_with_credentials and not self.s3_credentials_ok():
+            raise ValueError("Unable to connect to Optimization Cache. Check its URL.")
+
+        s3_msg = (
+            f"  using cache: {self.s3_storage.url.netloc} "
+            f"with bucket: {self.s3_storage.bucket_name}"
+            if self.s3_storage
+            else ""
+        )
+        logger.info(
+            f"Starting scraper with:\n"
+            f"  channel_id: {self.channel_id}\n"
+            f"  build_dir: {self.build_dir}\n"
+            f"  output_dir: {self.output_dir}\n"
+            f"  using webm : {self.use_webm}\n"
+            f"  low_quality : {self.low_quality}\n"
+            f"{s3_msg}"
+        )
+
         self.ensure_js_deps_are_present()
 
         logger.info("Download database")
@@ -1093,22 +1112,3 @@ class Kolibri2Zim:
                     "It looks like JS deps have not been installed,"
                     f" {js_deps_dir} is missing"
                 )
-
-        if self.s3_url_with_credentials and not self.s3_credentials_ok():
-            raise ValueError("Unable to connect to Optimization Cache. Check its URL.")
-
-        s3_msg = (
-            f"  using cache: {self.s3_storage.url.netloc} "
-            f"with bucket: {self.s3_storage.bucket_name}"
-            if self.s3_storage
-            else ""
-        )
-        logger.info(
-            f"Starting scraper with:\n"
-            f"  channel_id: {self.channel_id}\n"
-            f"  build_dir: {self.build_dir}\n"
-            f"  output_dir: {self.output_dir}\n"
-            f"  using webm : {self.use_webm}\n"
-            f"  low_quality : {self.low_quality}\n"
-            f"{s3_msg}"
-        )
