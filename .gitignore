@@ -367,17 +367,17 @@ pyrightconfig.json
 
 
 # assets that we download
-kolibri2zim/templates/assets/bootstrap/
-kolibri2zim/templates/assets/pdfjs/
-kolibri2zim/templates/assets/videojs/
-kolibri2zim/templates/assets/jquery.min.js
-kolibri2zim/templates/assets/ogvjs/
-kolibri2zim/templates/assets/videojs-ogvjs.js
 .dockerignore
-kolibri2zim/templates/assets/epub.min.js
-kolibri2zim/templates/assets/bootstrap-icons/
-kolibri2zim/templates/assets/jszip.min.js
-kolibri2zim/templates/assets/perseus/
+src/kolibri2zim/templates/assets/bootstrap/
+src/kolibri2zim/templates/assets/pdfjs/
+src/kolibri2zim/templates/assets/videojs/
+src/kolibri2zim/templates/assets/jquery.min.js
+src/kolibri2zim/templates/assets/ogvjs/
+src/kolibri2zim/templates/assets/videojs-ogvjs.js
+src/kolibri2zim/templates/assets/epub.min.js
+src/kolibri2zim/templates/assets/bootstrap-icons/
+src/kolibri2zim/templates/assets/jszip.min.js
+src/kolibri2zim/templates/assets/perseus/
 
 # output dir
 output

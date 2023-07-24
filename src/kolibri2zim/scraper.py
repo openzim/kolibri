@@ -936,7 +936,7 @@ class Kolibri2Zim:
             if len(self.description) > MAX_DESC_LENGTH:
                 self.long_description = self.description
                 self.description = f"{self.description[0:MAX_DESC_LENGTH-1]}…"
-                if len(self.long_description > MAX_LONG_DESC_LENGTH):
+                if len(self.long_description) > MAX_LONG_DESC_LENGTH:
                     self.long_description = (
                         f"{self.long_description[0:MAX_LONG_DESC_LENGTH-1]}…"
                     )

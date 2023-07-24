@@ -23,7 +23,7 @@ fi
 
 # Absolute path this script is in.
 SCRIPT_PATH="$( cd "$(dirname "$0")" ; pwd -P )"
-ASSETS_PATH="${SCRIPT_PATH}/kolibri2zim/templates/assets"
+ASSETS_PATH="${SCRIPT_PATH}/src/kolibri2zim/templates/assets"
 
 echo "About to download JS assets to ${ASSETS_PATH}"
 

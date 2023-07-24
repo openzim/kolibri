@@ -7,6 +7,32 @@ from invoke.tasks import task  # pyright: ignore [reportUnknownVariableType]
 use_pty = not os.getenv("CI", "")
 
 
+@task(optional=["args"], help={"args": "pytest additional arguments"})
+def test(ctx: Context, args: str | None = ""):
+    """run tests (without coverage)"""
+    ctx.run(f"pytest {args}", pty=use_pty)
+
+
+@task(optional=["args"], help={"args": "pytest additional arguments"})
+def test_cov(ctx: Context, args: str | None = ""):
+    """run test vith coverage"""
+    ctx.run(f"coverage run -m pytest {args}", pty=use_pty)
+
+
+@task()
+def report_cov(ctx: Context):
+    """report coverage"""
+    ctx.run("coverage combine", warn=True, pty=use_pty)
+    ctx.run("coverage report --show-missing", pty=use_pty)
+
+
+@task(optional=["args"], help={"args": "pytest additional arguments"})
+def coverage(ctx: Context, args: str | None = ""):
+    """run tests and report coverage"""
+    test_cov(ctx, args)
+    report_cov(ctx)
+
+
 @task(
     optional=["args"], help={"args": "linting tools (black, ruff) additional arguments"}
 )
