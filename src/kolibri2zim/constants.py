@@ -20,6 +20,20 @@ SCRAPER = f"{NAME} {VERSION}"
 STUDIO_DEFAULT_BASE_URL = "https://studio.learningequality.org"
 STUDIO_URL = os.getenv("STUDIO_URL", STUDIO_DEFAULT_BASE_URL)
 
+# when modifiying this list, update list in hatch_build.py as well
+JS_DEPS: list[str] = [
+    "pdfjs",
+    "videojs",
+    "ogvjs",
+    "bootstrap",
+    "bootstrap-icons",
+    "perseus",
+    "epub.min.js",
+    "jszip.min.js",
+    "jquery.min.js",
+    "videojs-ogvjs.js",
+]
+
 
 def is_running_inside_container():
     fpath = pathlib.Path("/proc/self/cgroup")

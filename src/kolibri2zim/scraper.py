@@ -7,7 +7,6 @@ import datetime
 import hashlib
 import io
 import json
-import os
 import shutil
 import tempfile
 import threading
@@ -33,7 +32,7 @@ from zimscraperlib.video.presets import VideoMp4Low, VideoWebmHigh, VideoWebmLow
 from zimscraperlib.zim.creator import Creator
 from zimscraperlib.zim.items import StaticItem
 
-from kolibri2zim.constants import ROOT_DIR, STUDIO_URL, get_logger
+from kolibri2zim.constants import JS_DEPS, ROOT_DIR, STUDIO_URL, get_logger
 from kolibri2zim.database import KolibriDB
 from kolibri2zim.debug import (
     ON_DISK_THRESHOLD,
@@ -1085,30 +1084,9 @@ class Kolibri2Zim:
         logger.debug("Added about page and custom CSS")
 
     def ensure_js_deps_are_present(self):
-        for js_deps_file in [
-            "epub.min.js",
-            "jszip.min.js",
-            "jquery.min.js",
-            "videojs-ogvjs.js",
-        ]:
-            if not os.path.exists(
-                self.templates_dir.joinpath(f"assets/{js_deps_file}")
-            ):
+        for dep in JS_DEPS:
+            if not self.templates_dir.joinpath(f"assets/{dep}").exists():
                 raise ValueError(
                     "It looks like JS deps have not been installed,"
-                    f" {js_deps_file} is missing"
-                )
-
-        for js_deps_dir in [
-            "pdfjs",
-            "videojs",
-            "ogvjs",
-            "bootstrap",
-            "bootstrap-icons",
-            "perseus",
-        ]:
-            if not os.path.exists(self.templates_dir.joinpath(f"assets/{js_deps_dir}")):
-                raise ValueError(
-                    "It looks like JS deps have not been installed,"
-                    f" {js_deps_dir} is missing"
+                    f" {dep} is missing"
                 )
