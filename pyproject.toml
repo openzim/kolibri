@@ -40,6 +40,7 @@ dev = [
     "kolibri2zim[lint]",
     "kolibri2zim[test]",
     "kolibri2zim[check]",
+    # hatchling is a dev dependency only needed for hook development on developer machine
     "hatchling==1.18.0",
 ]
 
