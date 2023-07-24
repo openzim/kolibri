@@ -282,7 +282,7 @@ class Kolibri2Zim:
                 "fileobj": fileobj,
                 "mimetype": preset.mimetype,
             }
-            self.creator.add_item_for(StaticItem(**kwargs))
+            self.creator.add_item(StaticItem(**kwargs))
         logger.debug(f"Added {path} from S3::{key}")
         return True
 
