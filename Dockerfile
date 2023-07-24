@@ -12,7 +12,7 @@ RUN apt-get update -y \
 #RUN pip3 install --no-cache-dir -r /src/requirements.txt
 COPY kolibri2zim /src/kolibri2zim
 COPY pyproject.toml *.md get_js_deps.sh install.sh MANIFEST.in LICENSE *.py /src/
-RUN cd /src/ && HATCH_BUILD_HOOKS_ENABLE=true hatch build -t sdist && ./install.sh
+RUN cd /src/ && hatch build -t sdist && ./install.sh
 
 # default output directory
 RUN mkdir -p /output
