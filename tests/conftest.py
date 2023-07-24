@@ -35,12 +35,13 @@ def scraper_generator() -> Generator[Callable[..., Kolibri2Zim], None, None]:
         channel_name: str = CHANNEL_NAME,
         channel_description: str = CHANNEL_DESCRIPTION,
         channel_author: str | None = None,
-        additional_options: dict[str, Any] = {},
+        additional_options: dict[str, Any] | None = None,
     ) -> Kolibri2Zim:
         options = {}
         for option_key in expected_options_keys:
             options[option_key] = None
-        options.update(additional_options)
+        if additional_options:
+            options.update(additional_options)
         scraper = Kolibri2Zim(**options)
         scraper.db = FakeDb(
             channel_author=channel_author,
@@ -50,11 +51,3 @@ def scraper_generator() -> Generator[Callable[..., Kolibri2Zim], None, None]:
         return scraper
 
     yield _scraper
-
-
-# @pytest.fixture
-# def default_options() -> Generator[dict[str, Any], None, None]:
-#     default_options = {}
-#     for option in options:
-#         default_options[option] = None
-#     yield default_options

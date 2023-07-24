@@ -44,7 +44,7 @@ def download_if_missing(url, fpath, fsize=None, *, force=False):
     if not skipped:
         fpath.unlink(missing_ok=True)
         wget = subprocess.run(
-            [  # noqa: S603
+            [
                 "/usr/bin/env",
                 "wget",
                 "-t",

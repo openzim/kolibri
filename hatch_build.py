@@ -29,7 +29,7 @@ class GetJsDepsHook(BuildHookInterface):
             return
         Path(self.root).joinpath("src/kolibri2zim/templates/assets")
         subprocess.run(
-            str(Path(self.root).joinpath("get_js_deps.sh")),  # noqa : S603
+            str(Path(self.root).joinpath("get_js_deps.sh")),  # : S603
             check=True,
         )
         return super().initialize(version, build_data)
