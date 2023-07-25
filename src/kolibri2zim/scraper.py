@@ -927,7 +927,7 @@ class Kolibri2Zim:
         channel_meta = self.db.get_channel_metadata(self.channel_id)
 
         # input  & metadata sanitation
-        period = datetime.datetime.now().strftime("%Y-%m")
+        period = datetime.date.today().strftime("%Y-%m")
         if self.fname:
             # make sure we were given a filename and not a path
             fname_path = Path(str(self.fname).format(period=period))
