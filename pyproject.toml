@@ -162,6 +162,8 @@ select = [
 ignore = [
   # Allow non-abstract empty methods in abstract base classes
   "B027",
+  # Allow use of datetime with tz and date.today
+  "DTZ005", "DTZ011",
   # Remove flake8-errmsg since we consider they bloat the code and provide limited value
   "EM",
   # Allow boolean positional values in function calls, like `dict.get(... True)`

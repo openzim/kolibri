@@ -29,7 +29,7 @@ class GetJsDepsHook(BuildHookInterface):
             return
         Path(self.root).joinpath("src/kolibri2zim/templates/assets")
         subprocess.run(
-            str(Path(self.root).joinpath("get_js_deps.sh")),  # : S603
+            str(Path(self.root).joinpath("get_js_deps.sh")),
             check=True,
         )
         return super().initialize(version, build_data)
@@ -38,7 +38,8 @@ class GetJsDepsHook(BuildHookInterface):
         for dep in JS_DEPS:
             if (
                 not Path(self.root)
-                .joinpath(f"src/kolibri2zim/templates/assets/{dep}")
+                .joinpath("src/kolibri2zim/templates/assets")
+                .joinpath(dep)
                 .exists()
             ):
                 return False

@@ -32,7 +32,7 @@ from zimscraperlib.video.presets import VideoMp4Low, VideoWebmHigh, VideoWebmLow
 from zimscraperlib.zim.creator import Creator
 from zimscraperlib.zim.items import StaticItem
 
-from kolibri2zim.constants import JS_DEPS, ROOT_DIR, STUDIO_URL, get_logger
+from kolibri2zim.constants import JS_DEPS, ROOT_DIR, STUDIO_URL, Global, get_logger
 from kolibri2zim.database import KolibriDB
 from kolibri2zim.debug import (
     ON_DISK_THRESHOLD,
@@ -108,11 +108,12 @@ class Kolibri2Zim:
 
         # zim params
         self.fname = go("fname")
-        tags = go("tags")
-        if tags is None:
-            self.tags = []
-        else:
-            self.tags = [t.strip() for t in tags.split(",")]
+        self.tags = (
+            []
+            if go("tags") is None
+            else [t.strip() for t in go("tags").split(",")]  # pyright: ignore
+        )
+
         self.title = go("title")
         self.description = go("description")
         self.long_description = go("long_description")
@@ -126,17 +127,14 @@ class Kolibri2Zim:
         self.css = go("css")
 
         # directory setup
-        self.output_dir = Path(str(go("output_dir"))).expanduser().resolve()
-        tmp_dir = go("tmp_dir")
-        if tmp_dir:
-            Path(tmp_dir).mkdir(parents=True, exist_ok=True)
-        self.build_dir = Path(tempfile.mkdtemp(dir=tmp_dir))
+        self.output_dir = Path(go("output_dir") or "/output").expanduser().resolve()
+        if go("tmp_dir"):
+            Path(go("tmp_dir")).mkdir(parents=True, exist_ok=True)  # pyright: ignore
+        self.build_dir = Path(tempfile.mkdtemp(dir=go("tmp_dir")))
 
         # performances options
-        nb_threads_str = go("threads")
-        self.nb_threads = int(nb_threads_str) if nb_threads_str else None
-        nb_processes_str = go("processes")
-        self.nb_processes = int(nb_processes_str) if nb_processes_str else None
+        self.nb_threads = int(go("threads") or 1)
+        self.nb_processes = int(go("processes") or Global.nb_available_cpus)
         self.s3_url_with_credentials = go("s3_url_with_credentials")
         self.s3_storage = None
         self.dedup_html_files = go("dedup_html_files")
@@ -146,9 +144,10 @@ class Kolibri2Zim:
         self.keep_build_dir = go("keep_build_dir")
         self.debug = go("debug")
         self.only_topics = go("only_topics")
-        node_ids = go("node_ids")
         self.node_ids = (
-            None if node_ids is None else [t.strip() for t in node_ids.split(",")]
+            None
+            if go("node_ids") is None
+            else [t.strip() for t in go("node_ids").split(",")]  # pyright: ignore
         )
 
         # jinja2 environment setup
@@ -823,7 +822,7 @@ class Kolibri2Zim:
             LongDescription=self.long_description,
             Creator=self.author,
             Publisher=self.publisher,
-            Date=datetime.datetime.now(datetime.UTC),
+            Date=datetime.date.today(),
             Illustration_48x48_at_1=self.favicon_48_fpath.read_bytes(),
         )
         self.creator.start()
@@ -871,9 +870,8 @@ class Kolibri2Zim:
                     f"FAILURE not_done={len(result.not_done)} done={len(result.done)}"
                 )
                 for future in result.done:
-                    future_exception = future.exception()
-                    if future_exception:
-                        raise future_exception
+                    if future.exception():
+                        raise future.exception()  # pyright:ignore
         except KeyboardInterrupt:
             self.creator.can_finish = False
             logger.error("KeyboardInterrupt, exiting.")
@@ -929,12 +927,12 @@ class Kolibri2Zim:
         channel_meta = self.db.get_channel_metadata(self.channel_id)
 
         # input  & metadata sanitation
-        period = datetime.datetime.now(datetime.UTC).strftime("%Y-%m")
+        period = datetime.datetime.now().strftime("%Y-%m")
         if self.fname:
             # make sure we were given a filename and not a path
             fname_path = Path(str(self.fname).format(period=period))
             if Path(fname_path.name) != fname_path:
-                raise ValueError(f"filename is not a filename: {fname_path}")
+                raise ValueError(f"filename is not a filename: {self.fname}")
             self.clean_fname = str(fname_path)
         else:
             self.clean_fname = f"{self.name}_{period}.zim"
