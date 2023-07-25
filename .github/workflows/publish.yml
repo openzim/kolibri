@@ -22,7 +22,7 @@ jobs:
       - name: Build packages
         run: |
           pip install -U pip build
-          python -m build sdist wheel
+          python -m build --sdist --wheel
 
       - name: Upload to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1.8
