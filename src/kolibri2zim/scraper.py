@@ -941,36 +941,25 @@ class Kolibri2Zim:
             self.title = channel_meta["name"]
         self.title = self.title.strip()
 
+        if self.description and len(self.description) > MAX_DESC_LENGTH:
+            raise ValueError(
+                f"Description too long ({len(self.description)}>{MAX_DESC_LENGTH})"
+            )
+        if self.long_description and len(self.long_description) > MAX_LONG_DESC_LENGTH:
+            raise ValueError(
+                f"LongDescription too long ({len(self.long_description)}"
+                f">{MAX_LONG_DESC_LENGTH})"
+            )
+
+        kolibri_desc = channel_meta["description"].strip()
+        if not self.long_description and len(kolibri_desc) > MAX_DESC_LENGTH:
+            self.long_description = kolibri_desc[0:MAX_LONG_DESC_LENGTH]
+            if len(kolibri_desc) > MAX_LONG_DESC_LENGTH:
+                self.long_description = self.long_description[:-1] + "…"
         if not self.description:
-            # User did not provided a description, we will infer it from channel
-            # metadata, limited to maximum length
-            if self.long_description:
-                raise ValueError(
-                    "long_description cannot be set if description is not set"
-                )
-            self.description = channel_meta["description"].strip()
-            if len(self.description) > MAX_DESC_LENGTH:
-                self.long_description = self.description
-                self.description = f"{self.description[0:MAX_DESC_LENGTH-1]}…"
-                if len(self.long_description) > MAX_LONG_DESC_LENGTH:
-                    self.long_description = (
-                        f"{self.long_description[0:MAX_LONG_DESC_LENGTH-1]}…"
-                    )
-        else:
-            self.description = self.description.strip()
-            if len(self.description) > MAX_DESC_LENGTH:
-                raise ValueError(
-                    f"description is too long ({len(self.description)}"
-                    f">{MAX_DESC_LENGTH})"
-                )
-            if (
-                self.long_description
-                and len(self.long_description) > MAX_LONG_DESC_LENGTH
-            ):
-                raise ValueError(
-                    f"long_description is too long ({len(self.long_description)}"
-                    f">{MAX_LONG_DESC_LENGTH})"
-                )
+            self.description = kolibri_desc[0:MAX_DESC_LENGTH]
+            if len(kolibri_desc) > MAX_DESC_LENGTH:
+                self.description = self.description[:-1] + "…"
 
         if not self.author:
             self.author = channel_meta["author"] or "Kolibri"

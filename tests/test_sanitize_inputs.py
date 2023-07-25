@@ -92,7 +92,7 @@ LONG_TEXT = (
             LONG_TEXT[0:MAX_DESC_LEN],
             None,
         ),
-        # CLI description set and is too long, channel description doe not matter
+        # CLI description set and is too long, channel description does not matter
         (LONG_TEXT[0 : MAX_DESC_LEN + 1], None, TEXT_NOT_USED, True, None, None),
         # CLI description not set and channel description is short enough
         (None, None, LONG_TEXT[0:MAX_DESC_LEN], False, LONG_TEXT[0:MAX_DESC_LEN], None),
@@ -145,14 +145,14 @@ LONG_TEXT = (
             None,
         ),
         # CLI description not set, CLI long descripion set and is short,
-        # channel description does not matter
+        # channel description set to something different than long desc
         (
             None,
             LONG_TEXT[0:MAX_LONG_DESC_LEN],
-            TEXT_NOT_USED,
-            True,
-            None,
-            None,
+            LONG_TEXT[10:MAX_LONG_DESC_LEN],
+            False,
+            LONG_TEXT[10 : MAX_DESC_LEN + 9] + "…",
+            LONG_TEXT[0:MAX_LONG_DESC_LEN],
         ),
     ],
 )
