@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 
@@ -18,14 +17,14 @@
 
     Uses wget for downloads """
 
-import os
-import sys
-import pathlib
-import logging
-import sqlite3
 import contextlib
-import subprocess
+import logging
 import multiprocessing as mp
+import os
+import pathlib
+import sqlite3
+import subprocess
+import sys
 
 STUDIO_DEFAULT_BASE_URL = "https://studio.learningequality.org"
 STUDIO_URL = os.getenv("STUDIO_URL", STUDIO_DEFAULT_BASE_URL)
@@ -36,7 +35,7 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger("dump-remote")
 
 
-def download_if_missing(url, fpath, fsize=None, force=False):
+def download_if_missing(url, fpath, fsize=None, *, force=False):
     skipped = (
         fpath.exists()
         and (fsize is not None and os.path.getsize(fpath) == fsize)
@@ -90,12 +89,11 @@ def get_rows(db_path, query):
         cursor = conn.execute(query)
         rows = cursor.fetchmany()
         while rows:
-            for row in rows:
-                yield row
+            yield from rows
             rows = cursor.fetchmany()
 
 
-def dump(channel_id, build_dir=None, force=False):
+def dump(channel_id: str, build_dir: str | None, *, force: bool):
     build_path = pathlib.Path(build_dir or "build")
     logger.info(f"dumping {channel_id} into {build_path}")
     build_path.mkdir(exist_ok=True, parents=True)
@@ -113,7 +111,7 @@ def dump(channel_id, build_dir=None, force=False):
     nb_files = get_single_value(db_path, "SELECT COUNT(*) FROM content_file")
     logger.info(f"Looping over all {nb_files} files")
 
-    def on_error(*args, **kwargs):
+    def on_error(*args, **kwargs):  # noqa: ARG001
         logger.error("Failed to download something")
 
     def on_success(result):
@@ -147,7 +145,12 @@ def dump(channel_id, build_dir=None, force=False):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print("Missing channel ID")
+    args = [sys.argv[idx] if len(sys.argv) >= idx + 1 else None for idx in range(4)]
+    _, channel_id, build_dir, force = args
+
+    if not channel_id:
+        logger.error("Missing channel ID")
         sys.exit(1)
-    dump(*sys.argv[1:])
+    force = bool(str(force).lower() in ("true", "force", "yes"))
+
+    dump(channel_id=channel_id, build_dir=build_dir, force=force)

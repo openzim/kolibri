@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
-import sys
 import argparse
+import sys
 
-from .constants import NAME, SCRAPER, Global, getLogger, setDebug
+from kolibri2zim.constants import NAME, SCRAPER, Global, get_logger, set_debug
 
 
 def main():
@@ -46,6 +45,11 @@ def main():
     parser.add_argument(
         "--description",
         help="Custom description for your ZIM. Kolibri channel description otherwise",
+    )
+
+    parser.add_argument(
+        "--long-description",
+        help="Custom long description for your ZIM, optional",
     )
 
     parser.add_argument(
@@ -190,10 +194,10 @@ def main():
     )
 
     args = parser.parse_args()
-    setDebug(args.debug)
-    logger = getLogger()
+    set_debug(args.debug)
+    logger = get_logger()
 
-    from .scraper import Kolibri2Zim
+    from kolibri2zim.scraper import Kolibri2Zim
 
     try:
         scraper = Kolibri2Zim(**dict(args._get_kwargs()))
@@ -202,7 +206,7 @@ def main():
         logger.error(f"FAILED. An error occurred: {exc}")
         if args.debug:
             logger.exception(exc)
-        raise SystemExit(1)
+        raise SystemExit(1) from exc
 
 
 if __name__ == "__main__":

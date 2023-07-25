@@ -1,9 +1,8 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 # vim: ai ts=4 sts=4 et sw=4 nu
 
-import pathlib
 import logging
+import pathlib
 import sqlite3
 
 logger = logging.getLogger(__name__)
@@ -23,7 +22,7 @@ class KolibriDB:
     Kolibri uses the Modified Preorder Tree Traversal model, from django-mptt
     https://gist.github.com/tmilos/f2f999b5839e2d42d751"""
 
-    def __init__(self, fpath: pathlib.Path, root_id: str = None):
+    def __init__(self, fpath: pathlib.Path, root_id: str | None = None):
         self.conn = sqlite3.connect(
             f"file:{fpath.expanduser().resolve()}?mode=ro",
             uri=True,
@@ -74,8 +73,7 @@ class KolibriDB:
             cursor = conn.execute(query, *args, **kwargs)
             rows = cursor.fetchmany()
             while rows:
-                for row in rows:
-                    yield row
+                yield from rows
                 rows = cursor.fetchmany()
 
     def get_channel_metadata(self, channel_id):
@@ -95,8 +93,7 @@ class KolibriDB:
             "ORDER BY level ASC",
             (left, right),
         ):
-            row = dict(row)
-            yield row
+            yield dict(row)
 
     def get_node_children(self, node_id, left=None, right=None):
         if left is None or right is None:
@@ -111,17 +108,17 @@ class KolibriDB:
             "ORDER BY level ASC",
             (left, right, node_id),
         ):
-            row = dict(row)
-            row.update(
+            rowdict = dict(row)
+            rowdict.update(
                 {
-                    "thumbnail": self.get_thumbnail_name(row["id"]),
+                    "thumbnail": self.get_thumbnail_name(rowdict["id"]),
                 }
             )
-            yield row
+            yield rowdict
 
     def get_node_children_count(self, node_id, left=None, right=None):
         if left is None or right is None:
-            node = self.get_node(with_parents=False, with_children=False)
+            node = self.get_node(node_id, with_parents=False, with_children=False)
             left = node["left"]
             right = node["right"]
 
@@ -133,7 +130,7 @@ class KolibriDB:
 
     def get_node_parents(self, node_id, left=None, right=None):
         if left is None or right is None:
-            node = self.get_node(with_parents=False, with_children=False)
+            node = self.get_node(node_id, with_parents=False, with_children=False)
             left = node["left"]
             right = node["right"]
 
@@ -148,7 +145,7 @@ class KolibriDB:
 
     def get_node_parents_count(self, node_id, left=None, right=None):
         if left is None or right is None:
-            node = self.get_node(with_parents=False, with_children=False)
+            node = self.get_node(node_id, with_parents=False, with_children=False)
             left = node["left"]
             right = node["right"]
 
@@ -160,7 +157,7 @@ class KolibriDB:
             (left, right, self.root_left, self.root_right),
         )
 
-    def get_node(self, node_id, with_parents=False, with_children=False):
+    def get_node(self, node_id, *, with_parents=False, with_children=False):
         node = self.get_row(
             "SELECT id, title, description, author, level, kind, "
             "license_name as license, license_owner, "
@@ -196,13 +193,13 @@ class KolibriDB:
             )
         return node
 
-    def get_node_file(self, node_id, thumbnail=False):
+    def get_node_file(self, node_id, *, thumbnail=False):
         try:
-            return next(self.get_node_files(node_id, thumbnail))
+            return next(self.get_node_files(node_id, thumbnail=thumbnail))
         except StopIteration:
             return None
 
-    def get_node_files(self, node_id, thumbnail=False):
+    def get_node_files(self, node_id, *, thumbnail=False):
         for row in self.get_rows(
             "SELECT id as fid, local_file_id as id, "
             "extension as ext, priority as prio, "

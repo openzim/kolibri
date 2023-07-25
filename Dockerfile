@@ -1,17 +1,23 @@
-FROM python:3.11-bullseye
-LABEL org.opencontainers.image.source https://github.com/openzim/kolibri2zim
+FROM python:3.11-bookworm
+LABEL org.opencontainers.image.source https://github.com/openzim/kolibri
 
 # Install necessary packages
-RUN apt-get update -y \
-    && apt-get install -y --no-install-recommends locales-all unzip ffmpeg \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+      locales-all \
+      unzip \
+      ffmpeg \
+ && rm -rf /var/lib/apt/lists/* \
+ && python -m pip install --no-cache-dir -U \
+      pip
 
-COPY requirements.txt /src/
-RUN pip3 install --no-cache-dir -r /src/requirements.txt
-COPY kolibri2zim /src/kolibri2zim
-COPY setup.py *.md get_js_deps.sh MANIFEST.in /src/
-RUN cd /src/ && ./get_js_deps.sh && python3 ./setup.py install
+# Copy code + associated artifacts
+COPY src /src/src
+COPY pyproject.toml *.md get_js_deps.sh MANIFEST.in LICENSE *.py /src/
+
+# Install + cleanup
+RUN pip install --no-cache-dir /src \
+ && rm -rf /src
 
 # default output directory
 RUN mkdir -p /output
