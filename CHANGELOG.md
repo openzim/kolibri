@@ -7,7 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Add `--long-description` CLI parameter to set ZIM long description
+- Add `--node-ids` CLI parameter to process only few channel nodes (_useful for debugging mostly_)
+
 ### Fixed
+- Fixed issue with ZIM description too long when sourced from channel metadata
+- Fixed issue with ZIM icon sizes / formats
 - Fix issue with ePub rendering which was outside the iframe
 - Description is now limited to expected lenght and long description is set
 - Icons and illustrations are squared as expected
@@ -17,11 +23,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Migrate to our new Python standard (hatch, ruff, pyright, ...)
 - Using zimscraperlib 3.1.1
-- Updated image to `python:3.11-bullseye`
+- Updated image to `python:3.11-bookworm`
 - Retry video reencoding up to three times
 - Move inline javascript to dedicated files
 - Move huge inline CSS to dedicated file
-- Add `--node-ids` CLI parameter to process only few nodes (useful for debugging)
 
 ## [1.0.1] - 2023-02-22
 
@@ -34,6 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.0.0] - 2021-11-11
 
+### Added
 - initial version
 - supports topic/document/audio/video/html5/exercise content types
 - uses libzim7
