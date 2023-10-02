@@ -11,9 +11,16 @@ RUN apt-get update \
  && python -m pip install --no-cache-dir -U \
       pip
 
+# Copy pyproject.toml and its dependencies
+COPY pyproject.toml README.md get_js_deps.sh hatch_build.py /src/
+COPY src/kolibri2zim/__about__.py /src/src/kolibri2zim/__about__.py
+
+# Install Python dependencies
+RUN pip install --no-cache-dir /src
+
 # Copy code + associated artifacts
 COPY src /src/src
-COPY pyproject.toml *.md get_js_deps.sh MANIFEST.in LICENSE *.py /src/
+COPY *.md LICENSE *.py /src/
 
 # Install + cleanup
 RUN pip install --no-cache-dir /src \
