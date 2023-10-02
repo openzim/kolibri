@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- New html option in coverage report
+
+### Fixed
+- Small fixes in invoke tasks
+
+### Changed
+- Dockerfile: split installation of Python dependencies for more efficiency
+- Github workflow: publish `dev` tag on every push to `main` branch
+- Github workflow: build Docker image + test its startup
+- Github workflow: adopt new standard execution structure (`on` conditions)
+
 ## [1.1.0] - 2023-07-25
 
 ### Added

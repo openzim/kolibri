@@ -8,7 +8,7 @@ jobs:
   publish:
     runs-on: ubuntu-22.04
     permissions:
-      id-token: write # mandatory for PyPI trusted publishing
+      id-token: write  # mandatory for PyPI trusted publishing
 
     steps:
       - uses: actions/checkout@v3

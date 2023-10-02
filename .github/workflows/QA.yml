@@ -1,7 +1,10 @@
 name: QA
 
 on:
-  workflow_call:
+  pull_request:
+  push:
+    branches:
+      - main
 
 jobs:
   check-qa:
