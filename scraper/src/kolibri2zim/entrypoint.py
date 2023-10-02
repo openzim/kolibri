@@ -2,6 +2,7 @@
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 import argparse
+import os
 import sys
 
 from kolibri2zim.constants import NAME, SCRAPER, Global, get_logger, set_debug
@@ -125,6 +126,15 @@ def main():
         "--tmp-dir",
         help="Path to create temp folder in. Used for building ZIM file. "
         "Receives all data (storage space)",
+    )
+
+    parser.add_argument(
+        "--zimui-dist",
+        type=str,
+        help=(
+            "Directory containing Vite build output from the Zim UI Vue.JS application"
+        ),
+        default=os.getenv("KOLIBRI_ZIMUI_DIST", "../zimui/dist"),
     )
 
     parser.add_argument(

@@ -24,7 +24,7 @@ Installation
 
 ## Virtualenv
 
-`kolibri2zim` is a Python3 software. If you are not using the 
+`kolibri2zim` is a Python3 software. If you are not using the
 [Docker](https://docker.com) image, you are advised to use it in a
 virtual environment to avoid installing software dependencies on your system.
 
@@ -59,6 +59,8 @@ Before contributing be sure to check out the
 To test epubs and pdfs rendering, a potential usefull command is:
 ```bash
 kolibri2zim --name "Biblioteca Elejandria" --output /output --tmp-dir /tmp --zim-file Biblioteca_Elejandria.zim --channel-id "fed29d60e4d84a1e8dcfc781d920b40e" --node-ids 'd92c07655128458f8248416154b18a68,89fe2f86ee3f4fbaa7fb2bf9bd56d088,75f99e6b97d14b14a4e74762ad77391f,89fe2f86ee3f4fbaa7fb2bf9bd56d088'
+
+hatch run kolibri2zim --name "Biblioteca Elejandria" --output output --zim-file Biblioteca_Elejandria.zim --channel-id "fed29d60e4d84a1e8dcfc781d920b40e" --node-ids 'd92c07655128458f8248416154b18a68,89fe2f86ee3f4fbaa7fb2bf9bd56d088,75f99e6b97d14b14a4e74762ad77391f,89fe2f86ee3f4fbaa7fb2bf9bd56d088'
 ```
 
 License

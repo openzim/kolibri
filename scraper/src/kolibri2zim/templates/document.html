@@ -31,11 +31,11 @@ iframe {
 
 <ul class="nav nav-tabs">
 <li class="nav-item">
-  <a class="nav-link{% if not is_alt %} active{% endif %}" {% if not is_alt %} aria-current="page"{% endif %} href="{{ node_id }}">Main document ({{ main_document_ext|upper }})</a>
+  <a class="nav-link{% if not is_alt %} active{% endif %}" {% if not is_alt %} aria-current="page"{% endif %} href="{{ node_slug }}">Main document ({{ main_document_ext|upper }})</a>
 </li>
 {% if alt_document %}
 <li class="nav-item">
-  <a class="nav-link{% if is_alt %} active{% endif %}" {% if is_alt %} aria-current="page"{% endif %} href="{{ node_id }}_alt">Alt Document ({{ alt_document_ext|upper }})</a>
+  <a class="nav-link{% if is_alt %} active{% endif %}" {% if is_alt %} aria-current="page"{% endif %} href="{{ node_slug }}_alt">Alt Document ({{ alt_document_ext|upper }})</a>
 </li>
 {% endif %}
 <li class="nav-item nav-btn">
@@ -48,11 +48,12 @@ iframe {
 {% endif %}
 </ul>
 
+
 <iframe id="frame" width="100%" height="100%" src="{{ target }}" frameborder="0" seamless="seamless" scrolling="yes" class="wb_iframe" allow="autoplay; fullscreen">
 
 </iframe>
 {% endblock %}
 
 {% block script %}
-<script src="./assets/document.js"></script>
+<script src="../assets/document.js"></script>
 {% endblock %}

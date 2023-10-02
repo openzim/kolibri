@@ -102,7 +102,7 @@ class KolibriDB:
             right = node["right"]
 
         for row in self.get_rows(
-            "SELECT id, title, kind "
+            "SELECT id, title, description, kind, lft as left, rght as right "
             "FROM content_contentnode WHERE lft > ? AND rght < ? "
             "AND parent_id=?"
             "ORDER BY level ASC",

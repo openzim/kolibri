@@ -17,6 +17,7 @@ import jinja2
 from bs4 import BeautifulSoup
 from kiwixstorage import KiwixStorage
 from pif import get_public_ip
+from slugify import slugify
 from zimscraperlib.constants import (
     MAXIMUM_DESCRIPTION_METADATA_LENGTH as MAX_DESC_LENGTH,
 )
@@ -40,6 +41,7 @@ from kolibri2zim.debug import (
     get_size_and_mime,
     safer_reencode,
 )
+from kolibri2zim.schemas import Channel, Topic, TopicSection, TopicSubSection
 
 logger = get_logger()
 options = [
@@ -131,6 +133,7 @@ class Kolibri2Zim:
         if go("tmp_dir"):
             Path(go("tmp_dir")).mkdir(parents=True, exist_ok=True)  # pyright: ignore
         self.build_dir = Path(tempfile.mkdtemp(dir=go("tmp_dir")))
+        self.zimui_dist = Path(go("zimui_dist") or "../zimui/dist")
 
         # performances options
         self.nb_threads = int(go("threads") or 1)
@@ -154,6 +157,9 @@ class Kolibri2Zim:
         self.jinja2_env = jinja2.Environment(
             loader=jinja2.FileSystemLoader(str(self.templates_dir)), autoescape=True
         )
+
+        self.nodes_slugs_list = []
+        self.nodes_slugs_dict = {}
 
     @property
     def templates_dir(self):
@@ -188,6 +194,95 @@ class Kolibri2Zim:
             if self.node_ids is None or node["id"] in self.node_ids:
                 schedule_node((node["id"], node["kind"]))
 
+    def get_or_create_node_slug(self, node) -> str:
+        if node["id"] in self.nodes_slugs_dict:
+            return self.nodes_slugs_dict[node["id"]]
+        slug = slugify(str(node.get("title", node["id"])))
+        if slug in self.nodes_slugs_list:
+            suffix = 1
+            while True:
+                if f"{slug}_{suffix}" not in self.nodes_slugs_list:
+                    break
+                suffix += 1
+            slug = f"{slug}_{suffix}"
+        self.nodes_slugs_list.append(slug)
+        self.nodes_slugs_dict[node["id"]] = slug
+        return slug
+
+    def write_topic_json(self, node_id):
+        node = self.db.get_node(node_id=node_id, with_parents=True, with_children=True)
+        slug = self.get_or_create_node_slug(node)
+        Path("/output/topics").mkdir(exist_ok=True)
+
+        with open(f"/output/topics/{slug}.json", "w") as fh:
+            json.dump(
+                Topic(
+                    parents=[
+                        self.get_or_create_node_slug(parent)
+                        for parent in node["parents"]
+                    ],
+                    title=node["title"],
+                    description=node["description"],
+                    sections=[
+                        TopicSection(
+                            slug=self.get_or_create_node_slug(section),
+                            title=section["title"],
+                            description=section["description"],
+                            kind=section["kind"],
+                            thumbnail=self.db.get_thumbnail_name(section["id"]),
+                            subsections=[
+                                TopicSubSection(
+                                    slug=self.get_or_create_node_slug(subsection),
+                                    title=subsection["title"],
+                                    description=subsection["description"],
+                                    kind=subsection["kind"],
+                                    thumbnail=self.db.get_thumbnail_name(
+                                        subsection["id"]
+                                    ),
+                                )
+                                for subsection in self.db.get_node_children(
+                                    section["id"],
+                                    section["left"],
+                                    section["right"],
+                                )
+                            ],
+                        )
+                        for section in node["children"]
+                    ],
+                    thumbnail=self.db.get_thumbnail_name(node_id),
+                ).model_dump(),
+                fh,
+                indent=2,
+            )
+
+    def write_channel_json(self):
+        node = self.db.get_node(
+            node_id=self.root_id, with_parents=True, with_children=True
+        )
+        with open("/output/channel.json", "w") as fh:
+            json.dump(
+                Channel(root=self.get_or_create_node_slug(node)).model_dump(),
+                fh,
+                indent=2,
+            )
+
+    def add_channel_json(self):
+        node = self.db.get_node(
+            node_id=self.root_id, with_parents=True, with_children=True
+        )
+
+        with self.creator_lock:
+            self.creator.add_item_for(
+                path="channel.json",
+                title=node["title"],
+                content=json.dumps(
+                    Channel(root=self.get_or_create_node_slug(node)).model_dump(),
+                    indent=2,
+                ),
+                mimetype="application/json",
+                is_front=False,
+            )
+
     def add_node(self, item):
         """process a content node from the tuple in queue"""
         node_id, kind = item
@@ -202,18 +297,18 @@ class Kolibri2Zim:
             # add thumbnail to zim if there's one for this node
             thumbnail = self.db.get_node_thumbnail(node_id)
             if thumbnail:
-                self.funnel_file(thumbnail["id"], thumbnail["ext"])
+                self.funnel_file(thumbnail["id"], thumbnail["ext"], "thumbnails/")
             # fire the add_{kind}_node() method which will actually process it
             handler(node_id)
 
-    def funnel_file(self, fid, fext):
+    def funnel_file(self, fid, fext, path_prefix=""):
         """directly add a Kolibri file to the ZIM using same name"""
 
         url, fname = get_kolibri_url_for(fid, fext)
         size, mimetype = get_size_and_mime(url)
 
         item_kw = {
-            "path": fname,
+            "path": path_prefix + fname,
             "title": "",
             "mimetype": mimetype,
             "delete_fpath": True,
@@ -307,19 +402,55 @@ class Kolibri2Zim:
         Topic nodes are used only for hierarchy and solely contains metadata"""
 
         # fetch details including parents for breadcrumb and children to link to
-        node = self.db.get_node(node_id, with_parents=True, with_children=True)
+        node = self.db.get_node(node_id=node_id, with_parents=True, with_children=True)
+        node_slug = self.get_or_create_node_slug(node)
 
-        html = self.jinja2_env.get_template("topic.html").render(
-            node_id=node_id, **node
-        )
         with self.creator_lock:
             self.creator.add_item_for(
-                path=node_id,
+                path=f"topics/{node_slug}.json",
                 title=node["title"],
-                content=html,
-                mimetype="text/html",
+                content=json.dumps(
+                    Topic(
+                        parents=[
+                            self.get_or_create_node_slug(parent)
+                            for parent in node["parents"]
+                        ],
+                        title=node["title"],
+                        description=node["description"],
+                        sections=[
+                            TopicSection(
+                                slug=self.get_or_create_node_slug(section),
+                                title=section["title"],
+                                description=section["description"],
+                                kind=section["kind"],
+                                thumbnail=self.db.get_thumbnail_name(section["id"]),
+                                subsections=[
+                                    TopicSubSection(
+                                        slug=self.get_or_create_node_slug(subsection),
+                                        title=subsection["title"],
+                                        description=subsection["description"],
+                                        kind=subsection["kind"],
+                                        thumbnail=self.db.get_thumbnail_name(
+                                            subsection["id"]
+                                        ),
+                                    )
+                                    for subsection in self.db.get_node_children(
+                                        section["id"],
+                                        section["left"],
+                                        section["right"],
+                                    )
+                                ],
+                            )
+                            for section in node["children"]
+                        ],
+                        thumbnail=self.db.get_thumbnail_name(node_id),
+                    ).model_dump(),
+                    indent=2,
+                ),
+                mimetype="application/json",
+                is_front=False,
             )
-        logger.debug(f"Added topic #{node_id}")
+        logger.debug(f"Added topic #{node_id} - {node_slug}")
 
     def add_video_node(self, node_id):
         """Add content from this `video` node to zim
@@ -424,6 +555,7 @@ class Kolibri2Zim:
             )
 
         node = self.db.get_node(node_id, with_parents=True)
+        node_slug = self.get_or_create_node_slug(node)
         html = self.jinja2_env.get_template("video.html").render(
             node_id=node_id,
             video_filename=video_filename,
@@ -435,12 +567,13 @@ class Kolibri2Zim:
         )
         with self.creator_lock:
             self.creator.add_item_for(
-                path=node_id,
+                path=f"static/{node_slug}",
                 title=node["title"],
                 content=html,
                 mimetype="text/html",
+                is_front=True,
             )
-        logger.debug(f"Added video #{node_id}")
+        logger.debug(f"Added video #{node_id} - {node_slug}")
 
     def add_video_upon_completion(self, future):
         """adds the converted video inside this future to the zim
@@ -528,6 +661,7 @@ class Kolibri2Zim:
         self.funnel_file(file["id"], file["ext"])
 
         node = self.db.get_node(node_id, with_parents=True)
+        node_slug = self.get_or_create_node_slug(node)
         html = self.jinja2_env.get_template("audio.html").render(
             node_id=node_id,
             filename=filename_for(file),
@@ -538,12 +672,13 @@ class Kolibri2Zim:
         )
         with self.creator_lock:
             self.creator.add_item_for(
-                path=node_id,
+                path=f"static/{node_slug}",
                 title=node["title"],
                 content=html,
                 mimetype="text/html",
+                is_front=True,
             )
-        logger.debug(f"Added audio #{node_id}")
+        logger.debug(f"Added audio #{node_id} - {node_slug}")
 
     def add_exercise_node(self, node_id):
         """Add content from this `exercise` node to zim
@@ -590,22 +725,25 @@ class Kolibri2Zim:
                 )
                 assessment_items.append(perseus_content)
 
+        node = self.db.get_node(node_id, with_parents=True, with_children=False)
+        node_slug = self.get_or_create_node_slug(node)
+
         # add all support files to ZIM
         for ark_member in zip_ark.namelist():
             if ark_member == manifest_name:
                 continue
 
-            path = f"{node_id}/{ark_member}"
+            path = f"static/{node_id}/{ark_member}"
             with self.creator_lock:
                 self.creator.add_item_for(
                     path=path,
                     title="",
                     content=read_from_zip(zip_ark, ark_member),
+                    is_front=False,
                 )
             logger.debug(f"Added exercise support file {path}")
 
         # prepare and add exercise HTML article
-        node = self.db.get_node(node_id, with_parents=True, with_children=False)
         html = self.jinja2_env.get_template("perseus_exercise.html").render(
             node_id=node_id,
             perseus_content=f"[{', '.join(assessment_items)}]",
@@ -614,12 +752,13 @@ class Kolibri2Zim:
         )
         with self.creator_lock:
             self.creator.add_item_for(
-                path=node_id,
+                path=f"static/{node_slug}",
                 title=node["title"],
                 content=html,
                 mimetype="text/html",
+                is_front=True,
             )
-        logger.debug(f"Added exercise node #{node_id}")
+        logger.debug(f"Added exercise node #{node_id} - {node_slug}")
 
     def add_document_node(self, node_id):
         """Add content from this `document` node to zim
@@ -640,9 +779,11 @@ class Kolibri2Zim:
         def target_for(file):
             filename = filename_for(file)
             if file["ext"] == "pdf":
-                return f"./assets/pdfjs/web/viewer.html?file=../../../{filename}"
+                return (
+                    f"../assets/pdfjs/web/viewer.html?file=../../../static/{filename}"
+                )
             if file["ext"] == "epub":
-                return f"./assets/epub_embed.html?url=../{filename}"
+                return f"../assets/epub_embed.html?url=../static/{filename}"
 
         # record the actual document
         files = self.db.get_node_files(node_id, thumbnail=False)
@@ -662,10 +803,12 @@ class Kolibri2Zim:
             alt_document = None
 
         for file in files:
-            self.funnel_file(file["id"], file["ext"])
+            self.funnel_file(file["id"], file["ext"], path_prefix="static/")
             file["target"] = target_for(file)
 
         node = self.db.get_node(node_id, with_parents=True)
+        node_slug = self.get_or_create_node_slug(node)
+
         # convert generator to list as we might read it twice
         node["parents"] = list(node["parents"])
 
@@ -678,6 +821,7 @@ class Kolibri2Zim:
         for is_alt in options:
             html = self.jinja2_env.get_template("document.html").render(
                 node_id=node_id,
+                node_slug=node_slug,
                 main_document=filename_for(main_document),
                 main_document_ext=main_document["ext"],
                 alt_document=filename_for(alt_document) if alt_document else None,
@@ -687,7 +831,7 @@ class Kolibri2Zim:
                 **node,
             )
             with self.creator_lock:
-                path = node_id
+                path = f"static/{node_slug}"
                 if is_alt:
                     path += "_alt"
                 self.creator.add_item_for(
@@ -695,8 +839,9 @@ class Kolibri2Zim:
                     title=node["title"],
                     content=html,
                     mimetype="text/html",
+                    is_front=is_alt,
                 )
-        logger.debug(f"Added document #{node_id}")
+        logger.debug(f"Added document #{node_id} - {node_slug}")
 
     def add_html5_node(self, node_id):
         """Add content from this `html5` node to zim
@@ -713,6 +858,9 @@ class Kolibri2Zim:
         if not file:
             return
 
+        node = self.db.get_node(node_id)
+        node_slug = self.get_or_create_node_slug(node)
+
         # download ZIP file to memory
         ark_url, ark_name = get_kolibri_url_for(file["id"], file["ext"])
         ark_data = io.BytesIO()
@@ -724,7 +872,9 @@ class Kolibri2Zim:
             if not self.dedup_html_files:
                 with self.creator_lock:
                     self.creator.add_item_for(
-                        path=f"{node_id}/{ark_member}",
+                        path=f"static/{node_slug}/{ark_member}"
+                        if ark_member != "index.html"
+                        else f"static/{node_slug}",
                         content=zip_ark.open(ark_member).read(),
                     )
                 continue
@@ -739,16 +889,20 @@ class Kolibri2Zim:
                     self.creator.add_item_for(
                         path=f"html5_files/{content_hash}",
                         content=content,
+                        is_front=False,
                     )
 
             # add redirect to the unique sum-based entry for that file's path
             with self.creator_lock:
                 self.creator.add_redirect(
-                    path=f"{node_id}/{ark_member}",
+                    path=f"static/{node_slug}/{ark_member}"
+                    if ark_member != "index.html"
+                    else f"static/{node_slug}",
                     target_path=f"html5_files/{content_hash}",
+                    is_front=ark_member == "index.html",
                 )
 
-        logger.debug(f"Added HTML5 node #{node_id}")
+        logger.debug(f"Added HTML5 node #{node_id} - {node_slug}")
 
     def run(self):
         if self.s3_url_with_credentials and not self.s3_credentials_ok():
@@ -811,7 +965,7 @@ class Kolibri2Zim:
             return 1
         self.creator = Creator(
             filename=self.output_dir.joinpath(self.clean_fname),
-            main_path=self.root_id,
+            main_path="index.html",  # self.root_id,
             ignore_duplicates=True,
         )
         self.creator.config_metadata(
@@ -830,6 +984,8 @@ class Kolibri2Zim:
         succeeded = False
         try:
             self.add_favicon()
+            self.add_zimui()
+
             self.add_custom_about_and_css()
 
             # add static files
@@ -859,6 +1015,8 @@ class Kolibri2Zim:
             # only awaits future completion and doesn't include callbacks
             self.videos_executor.shutdown()
 
+            self.add_channel_json()
+
             succeeded = (
                 not result.not_done
                 and sum([1 if fs.exception() else 0 for fs in result.done]) == 0
@@ -867,7 +1025,8 @@ class Kolibri2Zim:
             # DEBUG: raise first exception
             if not succeeded and result.done:
                 logger.info(
-                    f"FAILURE not_done={len(result.not_done)} done={len(result.done)}"
+                    f"FAILURE not_done={len(result.not_done)}"
+                    f"done={len(result.done)}"
                 )
                 for future in result.done:
                     if future.exception():
@@ -1014,8 +1173,21 @@ class Kolibri2Zim:
 
     def add_favicon(self):
         self.creator.add_illustration(96, self.favicon_96_fpath.read_bytes())
-        self.creator.add_item_for("favicon.png", fpath=self.favicon_96_fpath)
-        self.creator.add_item_for("favicon.ico", fpath=self.favicon_ico_path)
+        self.creator.add_item_for(
+            "favicon.png", fpath=self.favicon_96_fpath, is_front=False
+        )
+        self.creator.add_item_for(
+            "favicon.ico", fpath=self.favicon_ico_path, is_front=False
+        )
+
+    def add_zimui(self):
+        logger.info(f"Adding files in {self.zimui_dist}")
+        for file in self.zimui_dist.rglob("*"):
+            if file.is_dir():
+                continue
+            path = str(Path(file).relative_to(self.zimui_dist))
+            logger.debug(f"Adding {path} to ZIM")
+            self.creator.add_item_for(path, fpath=file, is_front=False)
 
     def add_custom_about_and_css(self):
         channel_meta = self.db.get_channel_metadata(self.channel_id)
@@ -1047,10 +1219,11 @@ class Kolibri2Zim:
         )
         with self.creator_lock:
             self.creator.add_item_for(
-                path="about",
+                path="static/about",
                 title=title,
                 content=html,
                 mimetype="text/html",
+                is_front=False,
             )
         del html
 
@@ -1067,7 +1240,9 @@ class Kolibri2Zim:
         else:
             content = ""
 
-        self.creator.add_item_for("custom.css", content=content, mimetype="text/css")
+        self.creator.add_item_for(
+            "custom.css", content=content, mimetype="text/css", is_front=False
+        )
         logger.debug("Added about page and custom CSS")
 
     def ensure_js_deps_are_present(self):

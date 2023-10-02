@@ -100,7 +100,7 @@ mkdir -p $ASSETS_PATH/perseus
 mv standalone-perseus-1.1.4/* $ASSETS_PATH/perseus
 rm -rf standalone-perseus-1.1.4/
 rm -f v1.1.4.zip
-sed -i $SEDEXT '1s/""/"assets\/perseus\/"/' $ASSETS_PATH/perseus/build/frame-perseus.js
+sed -i $SEDEXT '1s/""/"..\/assets\/perseus\/"/' $ASSETS_PATH/perseus/build/frame-perseus.js
 
 if command -v fix_ogvjs_dist > /dev/null; then
     echo "fixing JS files"

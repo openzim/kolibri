@@ -1,3 +1,10 @@
+FROM node:20-alpine as zimui
+
+WORKDIR /src
+COPY zimui /src
+RUN yarn install --frozen-lockfile
+RUN yarn build
+
 FROM python:3.11-bookworm
 LABEL org.opencontainers.image.source https://github.com/openzim/kolibri
 
@@ -27,8 +34,13 @@ COPY *.md LICENSE /src/
 RUN pip install --no-cache-dir /src/scraper \
  && rm -rf /src/scraper
 
+# Copy zimui build output
+COPY --from=zimui /src/dist /src/zimui
+
 # default output directory
 RUN mkdir -p /output
 WORKDIR /output
+
+ENV KOLIBRI_ZIMUI_DIST=/src/zimui
 
 CMD ["kolibri2zim", "--help"]
