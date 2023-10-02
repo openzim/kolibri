@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- New html option in coverage report
+
+### Fixed
+- Small fixes in invoke tasks
+
 ### Changed
 - Dockerfile: split installation of Python dependencies for more efficiency
 

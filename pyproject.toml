@@ -79,6 +79,7 @@ run = "inv test --args '{args}'"
 run-cov = "inv test-cov --args '{args}'"
 report-cov = "inv report-cov"
 coverage = "inv coverage --args '{args}'"
+html = "inv coverage --html --args '{args}'"
 
 [tool.hatch.envs.lint]
 template = "lint"
