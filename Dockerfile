@@ -12,19 +12,20 @@ RUN apt-get update \
       pip
 
 # Copy pyproject.toml and its dependencies
-COPY pyproject.toml README.md get_js_deps.sh hatch_build.py /src/
-COPY src/kolibri2zim/__about__.py /src/src/kolibri2zim/__about__.py
+COPY README.md /src/
+COPY scraper/pyproject.toml scraper/get_js_deps.sh scraper/hatch_build.py /src/scraper/
+COPY scraper/src/kolibri2zim/__about__.py /src/scraper/src/kolibri2zim/__about__.py
 
 # Install Python dependencies
-RUN pip install --no-cache-dir /src
+RUN pip install --no-cache-dir /src/scraper
 
 # Copy code + associated artifacts
-COPY src /src/src
-COPY *.md LICENSE *.py /src/
+COPY scraper/src /src/scraper/src
+COPY *.md LICENSE /src/
 
 # Install + cleanup
-RUN pip install --no-cache-dir /src \
- && rm -rf /src
+RUN pip install --no-cache-dir /src/scraper \
+ && rm -rf /src/scraper
 
 # default output directory
 RUN mkdir -p /output
