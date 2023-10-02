@@ -32,7 +32,31 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
 
-      - name: Ensure we can build targets
+  build_python:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version-file: pyproject.toml
+          architecture: x64
+
+      - name: Ensure we can build Python targets
         run: |
-          pip install build
-          python3 -m build
+          pip install -U pip build
+          python3 -m build --sdist --wheel
+
+  build_docker:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Ensure we can build the Docker image
+        run: |
+          docker build -t testimage .
+
+      - name: Ensure we can start the Docker image
+        run: |
+          docker run --rm testimage

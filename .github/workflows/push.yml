@@ -1,8 +1,0 @@
-name: Push
-
-on:
-  push:
-
-jobs:
-  qa:
-    uses: ./.github/workflows/qa.yml
