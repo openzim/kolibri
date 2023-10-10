@@ -37,6 +37,13 @@ form.kiwixsearch {
     </nav>
     {% endif %}
 
+    <!-- This is a hack for epub rendering due to a probable bug in epub.js
+      The bug is that iframe is moved up when the epub is rendered
+    -->
+    {% if is_epub %}
+    <p style="height: 30px;">&nbsp;</p>
+    {% endif %}
+
     {% block content %}{% endblock %}
 
     {% block footer %}

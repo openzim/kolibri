@@ -785,6 +785,9 @@ class Kolibri2Zim:
             if file["ext"] == "epub":
                 return f"../assets/epub_embed.html?url=../static/{filename}"
 
+        def get_is_epub(file):
+            return file["ext"] == "epub"
+
         # record the actual document
         files = self.db.get_node_files(node_id, thumbnail=False)
         if not files:
@@ -828,6 +831,7 @@ class Kolibri2Zim:
                 alt_document_ext=alt_document["ext"] if alt_document else None,
                 target=target_for(alt_document if is_alt else main_document),
                 is_alt=is_alt,
+                is_epub=get_is_epub(alt_document if is_alt else main_document),
                 **node,
             )
             with self.creator_lock:
