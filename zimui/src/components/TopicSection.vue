@@ -77,7 +77,7 @@ const getSelector = (value: string) => {
         <div
           v-for="(chunk, chunkIndex) in splitChunks(
             limitCardsPerSections(data.subsections, data.slug),
-            $grid.lg ? 4 : $grid.sm ? 2 : 1
+            $grid.lg ? 4 : $grid.sm ? 2 : 1,
           )"
           :key="chunkIndex"
           class="carousel-item"
