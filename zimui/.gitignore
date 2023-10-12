@@ -1,6 +1,5 @@
 node_modules
 
-public/fcc
 dist
 dist-ssr
 *.l

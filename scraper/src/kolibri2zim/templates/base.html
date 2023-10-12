@@ -24,8 +24,7 @@ form.kiwixsearch {
   <div class="container">
     {% if false and parents_count %}
     <!-- This navigation is broken due to the move to Vue.JS / slug-based URLs
-      This won't be needed anyway once the move to Vue.JS is finished and we
-      can probably live without it until then (or fix it later on).
+      To be fixed by https://github.com/openzim/kolibri/issues/64
     -->
     <nav style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
       <ol class="breadcrumb">
@@ -39,6 +38,7 @@ form.kiwixsearch {
 
     <!-- This is a hack for epub rendering due to a probable bug in epub.js
       The bug is that iframe is moved up when the epub is rendered
+      To be fixed by https://github.com/openzim/kolibri/issues/63
     -->
     {% if is_epub %}
     <p style="height: 30px;">&nbsp;</p>
