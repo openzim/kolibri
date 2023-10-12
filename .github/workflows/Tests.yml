@@ -7,7 +7,7 @@ on:
       - main
 
 jobs:
-  run-tests:
+  test-scraper:
     runs-on: ubuntu-22.04
 
     steps:
@@ -34,7 +34,27 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
 
-  build_python:
+  test-zimui:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version-file: .node-version
+
+      - name: Install dependencies
+        working-directory: zimui
+        run: |
+          yarn install
+
+      - name: Run tests
+        working-directory: zimui
+        run: |
+          yarn test
+
+  build-scraper:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
@@ -51,7 +71,27 @@ jobs:
           pip install -U pip build
           python3 -m build --sdist --wheel
 
-  build_docker:
+  build-zimui:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version-file: .node-version
+
+      - name: Install dependencies
+        working-directory: zimui
+        run: |
+          yarn install
+
+      - name: Build
+        working-directory: zimui
+        run: |
+          yarn build
+
+  build-docker:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
