@@ -19,7 +19,7 @@ const splitChunks = (inputArray: any[], perChunk: number) => {
   }, [])
 }
 
-const limitCardsPerSections = (inputArray: any[], section_slug:string) => {
+const limitCardsPerSections = (inputArray: any[], section_slug: string) => {
   const maxCardPerSection = 10
   if (inputArray.length > maxCardPerSection) {
     const inputSliced = inputArray.slice(0, maxCardPerSection)

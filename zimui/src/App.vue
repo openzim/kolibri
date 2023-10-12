@@ -17,7 +17,7 @@
 }
 
 div {
-  font-family: "Lato";
+  font-family: 'Lato';
 }
 
 @font-face {

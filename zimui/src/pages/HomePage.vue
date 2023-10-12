@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, toRef, Ref, ref, watch } from 'vue'
-import { RouteParams, RouterLink, useRoute } from 'vue-router'
+import { RouteParams, useRoute } from 'vue-router'
 
 import { useMainStore } from '../stores/main'
 const main = useMainStore()
@@ -34,5 +34,4 @@ import TopicHome from '../components/TopicHome.vue'
   </div>
 </template>
 
-<style scoped>
-</style>
+<style scoped></style>

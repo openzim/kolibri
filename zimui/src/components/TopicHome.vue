@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import TopicSection from '../components/TopicSection.vue'
 import TopicCard from '../components/TopicCard.vue'
-import { BaseTransitionPropsValidators, onMounted, ref, watch } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 
 import { useMainStore } from '../stores/main'
 const main = useMainStore()
@@ -9,6 +9,7 @@ const main = useMainStore()
 const props = defineProps({
   slug: {
     type: String,
+    default: undefined,
   },
 })
 
@@ -37,7 +38,10 @@ const getNonTopicSections = (inputArray: any[]) => {
 }
 
 const hasTopicAndNonTopicSection = (inputArray: any[]) => {
-  return getTopicSections(inputArray).length > 0 && getNonTopicSections(inputArray).length > 0
+  return (
+    getTopicSections(inputArray).length > 0 &&
+    getNonTopicSections(inputArray).length > 0
+  )
 }
 </script>
 
@@ -90,9 +94,7 @@ const hasTopicAndNonTopicSection = (inputArray: any[]) => {
     <div v-if="hasTopicAndNonTopicSection(data.sections)" class="container">
       <div class="row">
         <h4 class="mt-4">
-          <span>
-            In this section:
-          </span>
+          <span> In this section: </span>
         </h4>
       </div>
     </div>

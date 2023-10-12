@@ -43,15 +43,21 @@ defineProps({
       <img v-else class="card-img-top" :src="image" />
       <div class="card-body" :class="{ 'with-description': data.description }">
         <div class="card-content">
-          <h5 class="card-title"><span :title="data.title">{{ data.title }}</span></h5>
-          <span v-if="data.description" class="card-text" :title="data.description">
+          <h5 class="card-title">
+            <span :title="data.title">{{ data.title }}</span>
+          </h5>
+          <span
+            v-if="data.description"
+            class="card-text"
+            :title="data.description"
+          >
             {{ data.description }}
           </span>
         </div>
         <p class="card-text">
           <span class="badge rounded-pill badge-primary">
-              <FontAwesomeIcon icon="fa-regular fa-folder-open" />
-              &nbsp;EXPLORE
+            <FontAwesomeIcon icon="fa-regular fa-folder-open" />
+            &nbsp;EXPLORE
           </span>
         </p>
       </div>
@@ -68,8 +74,14 @@ defineProps({
       <img v-else class="card-img-top" :src="image" />
       <div class="card-body" :class="{ 'with-description': data.description }">
         <div class="card-content">
-          <h5 class="card-title"><span :title="data.title">{{ data.title }}</span></h5>
-          <span v-if="data.description" class="card-text" :title="data.description">
+          <h5 class="card-title">
+            <span :title="data.title">{{ data.title }}</span>
+          </h5>
+          <span
+            v-if="data.description"
+            class="card-text"
+            :title="data.description"
+          >
             {{ data.description }}
           </span>
         </div>

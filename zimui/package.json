@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "test": "vitest",
     "lint": "eslint --ignore-path .eslintignore --ext .js,.ts,.vue ./src",
-    "format": "prettier .  --write"
+    "format": "prettier . --write"
   },
   "dependencies": {
     "@codemirror/lang-javascript": "^6.1.6",
