@@ -65,7 +65,7 @@ defineProps({
   </div>
 
   <div v-else class="card">
-    <a class="text-decoration-none text-reset" :href="`./static/${data.slug}`">
+    <a class="text-decoration-none text-reset" :href="`./files/${data.slug}`">
       <img
         v-if="data.thumbnail"
         class="card-img-top"

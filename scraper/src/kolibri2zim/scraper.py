@@ -567,7 +567,7 @@ class Kolibri2Zim:
         )
         with self.creator_lock:
             self.creator.add_item_for(
-                path=f"static/{node_slug}",
+                path=f"files/{node_slug}",
                 title=node["title"],
                 content=html,
                 mimetype="text/html",
@@ -672,7 +672,7 @@ class Kolibri2Zim:
         )
         with self.creator_lock:
             self.creator.add_item_for(
-                path=f"static/{node_slug}",
+                path=f"files/{node_slug}",
                 title=node["title"],
                 content=html,
                 mimetype="text/html",
@@ -733,7 +733,7 @@ class Kolibri2Zim:
             if ark_member == manifest_name:
                 continue
 
-            path = f"static/{node_id}/{ark_member}"
+            path = f"files/{node_id}/{ark_member}"
             with self.creator_lock:
                 self.creator.add_item_for(
                     path=path,
@@ -752,7 +752,7 @@ class Kolibri2Zim:
         )
         with self.creator_lock:
             self.creator.add_item_for(
-                path=f"static/{node_slug}",
+                path=f"files/{node_slug}",
                 title=node["title"],
                 content=html,
                 mimetype="text/html",
@@ -779,11 +779,9 @@ class Kolibri2Zim:
         def target_for(file):
             filename = filename_for(file)
             if file["ext"] == "pdf":
-                return (
-                    f"../assets/pdfjs/web/viewer.html?file=../../../static/{filename}"
-                )
+                return f"../assets/pdfjs/web/viewer.html?file=../../../files/{filename}"
             if file["ext"] == "epub":
-                return f"../assets/epub_embed.html?url=../static/{filename}"
+                return f"../assets/epub_embed.html?url=../files/{filename}"
 
         def get_is_epub(file):
             return file["ext"] == "epub"
@@ -806,7 +804,7 @@ class Kolibri2Zim:
             alt_document = None
 
         for file in files:
-            self.funnel_file(file["id"], file["ext"], path_prefix="static/")
+            self.funnel_file(file["id"], file["ext"], path_prefix="files/")
             file["target"] = target_for(file)
 
         node = self.db.get_node(node_id, with_parents=True)
@@ -835,7 +833,7 @@ class Kolibri2Zim:
                 **node,
             )
             with self.creator_lock:
-                path = f"static/{node_slug}"
+                path = f"files/{node_slug}"
                 if is_alt:
                     path += "_alt"
                 self.creator.add_item_for(
@@ -876,9 +874,9 @@ class Kolibri2Zim:
             if not self.dedup_html_files:
                 with self.creator_lock:
                     self.creator.add_item_for(
-                        path=f"static/{node_slug}/{ark_member}"
+                        path=f"files/{node_slug}/{ark_member}"
                         if ark_member != "index.html"
-                        else f"static/{node_slug}",
+                        else f"files/{node_slug}",
                         content=zip_ark.open(ark_member).read(),
                     )
                 continue
@@ -899,9 +897,9 @@ class Kolibri2Zim:
             # add redirect to the unique sum-based entry for that file's path
             with self.creator_lock:
                 self.creator.add_redirect(
-                    path=f"static/{node_slug}/{ark_member}"
+                    path=f"files/{node_slug}/{ark_member}"
                     if ark_member != "index.html"
-                    else f"static/{node_slug}",
+                    else f"files/{node_slug}",
                     target_path=f"html5_files/{content_hash}",
                     is_front=ark_member == "index.html",
                 )
@@ -992,7 +990,7 @@ class Kolibri2Zim:
 
             self.add_custom_about_and_css()
 
-            # add static files
+            # add assets files
             logger.info("Adding local files (assets)")
             self.add_local_files("assets", self.templates_dir.joinpath("assets"))
 
@@ -1223,7 +1221,7 @@ class Kolibri2Zim:
         )
         with self.creator_lock:
             self.creator.add_item_for(
-                path="static/about",
+                path="files/about",
                 title=title,
                 content=html,
                 mimetype="text/html",
