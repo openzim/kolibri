@@ -42,7 +42,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version-file: .node-version
+          node-version-file: zimui/.node-version
 
       - name: Install dependencies
         working-directory: zimui
@@ -79,7 +79,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version-file: .node-version
+          node-version-file: zimui/.node-version
 
       - name: Install dependencies
         working-directory: zimui
