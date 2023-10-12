@@ -11,7 +11,9 @@ defineProps({
 const instance = getCurrentInstance()
 const uid = ref('carroussel_' + instance?.uid)
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const splitChunks = (inputArray: any[], perChunk: number) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return inputArray.reduce((all: any[], one: ConcatArray<never>, i: number) => {
     const ch = Math.floor(i / perChunk)
     all[ch] = [].concat(all[ch] || [], one)
@@ -19,6 +21,7 @@ const splitChunks = (inputArray: any[], perChunk: number) => {
   }, [])
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const limitCardsPerSections = (inputArray: any[], section_slug: string) => {
   const maxCardPerSection = 10
   if (inputArray.length > maxCardPerSection) {

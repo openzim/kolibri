@@ -29,14 +29,17 @@ onMounted(() => {
   fetchData()
 })
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const getTopicSections = (inputArray: any[]) => {
   return inputArray.filter((section) => section.kind == 'topic')
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const getNonTopicSections = (inputArray: any[]) => {
   return inputArray.filter((section) => section.kind != 'topic')
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const hasTopicAndNonTopicSection = (inputArray: any[]) => {
   return (
     getTopicSections(inputArray).length > 0 &&
