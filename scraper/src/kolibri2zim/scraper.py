@@ -167,13 +167,11 @@ class Kolibri2Zim:
 
     def add_local_files(self, root_path, folder):
         """recursively add local files from {folder} starting at {path}"""
-        non_front = ("viewer.html", "epub_embed.html")
         for fpath in folder.iterdir():
             path = "/".join([root_path, fpath.name])
             if fpath.is_file():
-                mimetype = "text/html;raw=true" if fpath.name in non_front else None
                 self.creator.add_item_for(
-                    path=path, title="", fpath=fpath, mimetype=mimetype
+                    path=path, title="", fpath=fpath, is_front=False
                 )
                 logger.debug(f"Adding {path}")
             else:
@@ -719,7 +717,7 @@ class Kolibri2Zim:
             filename = filename_for(file)
             if file["ext"] == "pdf":
                 return f"../assets/pdfjs/web/viewer.html?file=../../../files/{filename}"
-            if file["ext"] == "epub":
+            if get_is_epub(file):
                 return f"../assets/epub_embed.html?url=../files/{filename}"
 
         def get_is_epub(file):
@@ -817,6 +815,7 @@ class Kolibri2Zim:
                         if ark_member != "index.html"
                         else f"files/{node_slug}",
                         content=zip_ark.open(ark_member).read(),
+                        is_front=(ark_member == "index.html"),
                     )
                 continue
 
