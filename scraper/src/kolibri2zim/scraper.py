@@ -158,8 +158,8 @@ class Kolibri2Zim:
             loader=jinja2.FileSystemLoader(str(self.templates_dir)), autoescape=True
         )
 
-        self.nodes_slugs_list = []
-        self.nodes_slugs_dict = {}
+        # a dictionnary mapping node_id (keys) to slug (values)
+        self.nodes_ids_to_slugs: dict[str, str] = {}
 
     @property
     def templates_dir(self):
@@ -195,76 +195,19 @@ class Kolibri2Zim:
                 schedule_node((node["id"], node["kind"]))
 
     def get_or_create_node_slug(self, node) -> str:
-        if node["id"] in self.nodes_slugs_dict:
-            return self.nodes_slugs_dict[node["id"]]
+        """Compute a unique slug to be used as URL for a given node"""
+        if node["id"] in self.nodes_ids_to_slugs:
+            return self.nodes_ids_to_slugs[node["id"]]
         slug = slugify(str(node.get("title", node["id"])))
-        if slug in self.nodes_slugs_list:
+        if slug in self.nodes_ids_to_slugs.values():
             suffix = 1
             while True:
-                if f"{slug}_{suffix}" not in self.nodes_slugs_list:
+                if f"{slug}_{suffix}" not in self.nodes_ids_to_slugs.values():
                     break
                 suffix += 1
             slug = f"{slug}_{suffix}"
-        self.nodes_slugs_list.append(slug)
-        self.nodes_slugs_dict[node["id"]] = slug
+        self.nodes_ids_to_slugs[node["id"]] = slug
         return slug
-
-    def write_topic_json(self, node_id):
-        node = self.db.get_node(node_id=node_id, with_parents=True, with_children=True)
-        slug = self.get_or_create_node_slug(node)
-        Path("/output/topics").mkdir(exist_ok=True)
-
-        with open(f"/output/topics/{slug}.json", "w") as fh:
-            json.dump(
-                Topic(
-                    parents=[
-                        self.get_or_create_node_slug(parent)
-                        for parent in node["parents"]
-                    ],
-                    title=node["title"],
-                    description=node["description"],
-                    sections=[
-                        TopicSection(
-                            slug=self.get_or_create_node_slug(section),
-                            title=section["title"],
-                            description=section["description"],
-                            kind=section["kind"],
-                            thumbnail=self.db.get_thumbnail_name(section["id"]),
-                            subsections=[
-                                TopicSubSection(
-                                    slug=self.get_or_create_node_slug(subsection),
-                                    title=subsection["title"],
-                                    description=subsection["description"],
-                                    kind=subsection["kind"],
-                                    thumbnail=self.db.get_thumbnail_name(
-                                        subsection["id"]
-                                    ),
-                                )
-                                for subsection in self.db.get_node_children(
-                                    section["id"],
-                                    section["left"],
-                                    section["right"],
-                                )
-                            ],
-                        )
-                        for section in node["children"]
-                    ],
-                    thumbnail=self.db.get_thumbnail_name(node_id),
-                ).model_dump(),
-                fh,
-                indent=2,
-            )
-
-    def write_channel_json(self):
-        node = self.db.get_node(
-            node_id=self.root_id, with_parents=True, with_children=True
-        )
-        with open("/output/channel.json", "w") as fh:
-            json.dump(
-                Channel(root=self.get_or_create_node_slug(node)).model_dump(),
-                fh,
-                indent=2,
-            )
 
     def add_channel_json(self):
         node = self.db.get_node(
@@ -275,10 +218,9 @@ class Kolibri2Zim:
             self.creator.add_item_for(
                 path="channel.json",
                 title=node["title"],
-                content=json.dumps(
-                    Channel(root=self.get_or_create_node_slug(node)).model_dump(),
-                    indent=2,
-                ),
+                content=Channel(
+                    root_slug=self.get_or_create_node_slug(node)
+                ).model_dump_json(by_alias=True, indent=2),
                 mimetype="application/json",
                 is_front=False,
             )
@@ -409,44 +351,41 @@ class Kolibri2Zim:
             self.creator.add_item_for(
                 path=f"topics/{node_slug}.json",
                 title=node["title"],
-                content=json.dumps(
-                    Topic(
-                        parents=[
-                            self.get_or_create_node_slug(parent)
-                            for parent in node["parents"]
-                        ],
-                        title=node["title"],
-                        description=node["description"],
-                        sections=[
-                            TopicSection(
-                                slug=self.get_or_create_node_slug(section),
-                                title=section["title"],
-                                description=section["description"],
-                                kind=section["kind"],
-                                thumbnail=self.db.get_thumbnail_name(section["id"]),
-                                subsections=[
-                                    TopicSubSection(
-                                        slug=self.get_or_create_node_slug(subsection),
-                                        title=subsection["title"],
-                                        description=subsection["description"],
-                                        kind=subsection["kind"],
-                                        thumbnail=self.db.get_thumbnail_name(
-                                            subsection["id"]
-                                        ),
-                                    )
-                                    for subsection in self.db.get_node_children(
-                                        section["id"],
-                                        section["left"],
-                                        section["right"],
-                                    )
-                                ],
-                            )
-                            for section in node["children"]
-                        ],
-                        thumbnail=self.db.get_thumbnail_name(node_id),
-                    ).model_dump(),
-                    indent=2,
-                ),
+                content=Topic(
+                    parents_slugs=[
+                        self.get_or_create_node_slug(parent)
+                        for parent in node["parents"]
+                    ],
+                    title=node["title"],
+                    description=node["description"],
+                    sections=[
+                        TopicSection(
+                            slug=self.get_or_create_node_slug(section),
+                            title=section["title"],
+                            description=section["description"],
+                            kind=section["kind"],
+                            thumbnail=self.db.get_thumbnail_name(section["id"]),
+                            subsections=[
+                                TopicSubSection(
+                                    slug=self.get_or_create_node_slug(subsection),
+                                    title=subsection["title"],
+                                    description=subsection["description"],
+                                    kind=subsection["kind"],
+                                    thumbnail=self.db.get_thumbnail_name(
+                                        subsection["id"]
+                                    ),
+                                )
+                                for subsection in self.db.get_node_children(
+                                    section["id"],
+                                    section["left"],
+                                    section["right"],
+                                )
+                            ],
+                        )
+                        for section in node["children"]
+                    ],
+                    thumbnail=self.db.get_thumbnail_name(node_id),
+                ).model_dump_json(by_alias=True, indent=2),
                 mimetype="application/json",
                 is_front=False,
             )
@@ -967,7 +906,7 @@ class Kolibri2Zim:
             return 1
         self.creator = Creator(
             filename=self.output_dir.joinpath(self.clean_fname),
-            main_path="index.html",  # self.root_id,
+            main_path="index.html",
             ignore_duplicates=True,
         )
         self.creator.config_metadata(

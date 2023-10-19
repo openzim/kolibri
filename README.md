@@ -42,6 +42,7 @@ Call `deactivate` to quit the virtual environment.
 See `pyproject.toml` for the list of python dependencies.
 
 To test epubs and pdfs rendering, a potential usefull command is:
+
 ```bash
 kolibri2zim --name "Biblioteca Elejandria" --output /output --tmp-dir /tmp --zim-file Biblioteca_Elejandria.zim --channel-id "fed29d60e4d84a1e8dcfc781d920b40e" --node-ids 'd92c07655128458f8248416154b18a68,89fe2f86ee3f4fbaa7fb2bf9bd56d088,75f99e6b97d14b14a4e74762ad77391f,89fe2f86ee3f4fbaa7fb2bf9bd56d088'
 ```
@@ -64,16 +65,19 @@ Before contributing be sure to check out the
 [CONTRIBUTING.md](CONTRIBUTING.md) guidelines.
 
 Some usefull test channels:
+
 - 7f744ce8d28b471eaf663abd60c92267: a very minimal channel with all kind of content
 - 9f15f4e9aeaa48b5ae271e5749d6fe80 : a small channel with significantly nested items and all kind of content
 
 ### Build and running scraper locally
 
 You have to:
+
 - build the `zimui` frontend which will be embededed inside the ZIM (and redo it every time you make modifications to the `zimui`)
 - run the `scraper` to retrieve FCC curriculum and build the ZIM
 
 Sample commands:
+
 ```
 cd zimui
 yarn install

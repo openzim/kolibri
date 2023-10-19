@@ -1,39 +1,52 @@
 import { defineStore } from 'pinia'
 import axios from 'axios'
+import Channel from '@/types/Channel'
+import Topic from '@/types/Topic'
+
+export type RootState = {
+  channelData: Channel | null
+  isLoading: boolean
+  errorMessage: string
+}
 export const useMainStore = defineStore('main', {
-  state: () => ({
-    channel_data: null,
-    is_loading: false,
-    error: '',
-  }),
+  state: () =>
+    ({
+      channelData: null,
+      isLoading: false,
+      errorMessage: '',
+    }) as RootState,
   getters: {},
   actions: {
     async fetchChannel() {
-      this.is_loading = true
-      this.error = ''
-      try {
-        const data = await axios.get('./channel.json')
-        this.channel_data = data.data
-      } catch (error) {
-        this.error = 'Failed to load channel data'
-        this.channel_data = null
-        return false
-      }
-      this.is_loading = false
-      return true
+      this.isLoading = true
+      this.errorMessage = ''
+      return axios.get('./channel.json').then(
+        (response) => {
+          this.isLoading = false
+          this.channelData = response.data as Channel
+        },
+        (_) => {
+          this.isLoading = false
+          this.channelData = null
+          this.errorMessage = 'Failed to load channel data'
+        },
+      )
     },
     async fetchTopic(slug: string) {
-      this.is_loading = true
-      this.error = ''
-      try {
-        const data = await axios.get('./topics/' + slug + '.json')
-        this.is_loading = false
-        return data.data
-      } catch (error) {
-        this.error = 'Failed to load node ' + slug + ' data'
-        this.is_loading = false
-        return null
-      }
+      this.isLoading = true
+      this.errorMessage = ''
+      return axios.get('./topics/' + slug + '.json').then(
+        (response) => {
+          this.isLoading = false
+          return response.data as Topic
+        },
+        (_) => {
+          this.isLoading = false
+          this.channelData = null
+          this.errorMessage = 'Failed to load node ' + slug + ' data'
+          return null
+        },
+      )
     },
   },
 })

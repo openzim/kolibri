@@ -2,8 +2,11 @@
 import TopicSection from '../components/TopicSection.vue'
 import TopicCard from '../components/TopicCard.vue'
 import { onMounted, ref, watch } from 'vue'
-
+import Topic from '@/types/Topic'
 import { useMainStore } from '../stores/main'
+import TopicSectionType from '@/types/TopicSection'
+import { transformTopicSectionOrSubSectionToCardData } from '@/types/TopicCardData'
+
 const main = useMainStore()
 
 const props = defineProps({
@@ -13,14 +16,17 @@ const props = defineProps({
   },
 })
 
-const data = ref()
+const topic = ref<Topic>()
 
+/** Retrieve topic data */
 const fetchData = async function () {
   if (props.slug == undefined) {
     return
   }
-  data.value = await main.fetchTopic(props.slug)
-  document.title = data.value.title
+  const resp = await main.fetchTopic(props.slug)
+  if (resp) {
+    topic.value = resp
+  }
 }
 
 watch(props, fetchData)
@@ -29,28 +35,47 @@ onMounted(() => {
   fetchData()
 })
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const getTopicSections = (inputArray: any[]) => {
-  return inputArray.filter((section) => section.kind == 'topic')
+/** Return sections whose kind is 'topic' */
+const getTopicSections = (topics: TopicSectionType[]): TopicSectionType[] => {
+  return topics.filter((section) => section.kind == 'topic')
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const getNonTopicSections = (inputArray: any[]) => {
-  return inputArray.filter((section) => section.kind != 'topic')
+/** Return sections whose kind is not 'topic' */
+const getNonTopicSections = (
+  topics: TopicSectionType[],
+): TopicSectionType[] => {
+  return topics.filter((section) => section.kind != 'topic')
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const hasTopicAndNonTopicSection = (inputArray: any[]) => {
+/** Return true if section has a mix of topic and non-topic sectionss */
+const hasTopicAndNonTopicSection = (topics: TopicSectionType[]): boolean => {
   return (
-    getTopicSections(inputArray).length > 0 &&
-    getNonTopicSections(inputArray).length > 0
+    getTopicSections(topics).length > 0 &&
+    getNonTopicSections(topics).length > 0
   )
+}
+
+/** Return true if node has at least on parent */
+const hasParents = (): boolean => {
+  return (
+    topic.value != undefined &&
+    topic.value.parentsSlugs != undefined &&
+    topic.value.parentsSlugs.length > 0
+  )
+}
+
+/** Return the slug of the last parent in the parents hierarchy */
+const parentSlug = (): string | null => {
+  if (!topic.value || !topic.value.parentsSlugs) {
+    return null
+  }
+  return topic.value.parentsSlugs[topic.value.parentsSlugs.length - 1]
 }
 </script>
 
 <template>
-  <div v-if="data" class="content">
-    <div class="jumbotron" :class="{ 'with-description': data.description }">
+  <div v-if="topic" class="content">
+    <div class="jumbotron" :class="{ 'with-description': topic.description }">
       <div class="container">
         <div
           class="align-items-start d-flex justify-content-between mt-5"
@@ -58,13 +83,13 @@ const hasTopicAndNonTopicSection = (inputArray: any[]) => {
         <div class="row">
           <div
             :class="{
-              'col-sm-8': data.thumbnail,
-              'col-sm-12': !data.thumbnail,
+              'col-sm-8': topic.thumbnail,
+              'col-sm-12': !topic.thumbnail,
             }"
           >
-            <router-link :to="`./${data.parents[data.parents.length - 1]}`">
+            <router-link :to="`./${parentSlug()}`">
               <button
-                v-if="data.parents.length > 0"
+                v-if="hasParents()"
                 type="button"
                 class="btn back-button rounded-circle btn-secondary light"
               >
@@ -74,27 +99,27 @@ const hasTopicAndNonTopicSection = (inputArray: any[]) => {
                 />
               </button>
             </router-link>
-            <h1 class="d-md-none h3">{{ data.title }}</h1>
-            <h1 class="d-md-block d-none">{{ data.title }}</h1>
+            <h1 class="d-md-none h3">{{ topic.title }}</h1>
+            <h1 class="d-md-block d-none">{{ topic.title }}</h1>
             <div class="lead mb-2">
-              <span class="description" :title="data.description">
-                {{ data.description }}
+              <span class="description" :title="topic.description">
+                {{ topic.description }}
               </span>
             </div>
           </div>
-          <div v-if="data.thumbnail" class="thumbnail col-sm-4">
-            <img :src="`./thumbnails/${data.thumbnail}`" />
+          <div v-if="topic.thumbnail" class="thumbnail col-sm-4">
+            <img :src="`./thumbnails/${topic.thumbnail}`" />
           </div>
         </div>
       </div>
     </div>
     <TopicSection
-      v-for="(content, contentIndex) in getTopicSections(data.sections)"
+      v-for="(content, contentIndex) in getTopicSections(topic.sections)"
       :key="contentIndex"
       :data="content"
     />
 
-    <div v-if="hasTopicAndNonTopicSection(data.sections)" class="container">
+    <div v-if="hasTopicAndNonTopicSection(topic.sections)" class="container">
       <div class="row">
         <h4 class="mt-4">
           <span> In this section: </span>
@@ -105,11 +130,13 @@ const hasTopicAndNonTopicSection = (inputArray: any[]) => {
     <div class="container">
       <div class="row">
         <div
-          v-for="(content, contentIndex) in getNonTopicSections(data.sections)"
+          v-for="(content, contentIndex) in getNonTopicSections(topic.sections)"
           :key="contentIndex"
           class="col-sm-6 col-md-6 col-lg-3 pt-3 pb-3"
         >
-          <TopicCard :data="content" />
+          <TopicCard
+            :data="transformTopicSectionOrSubSectionToCardData(content)"
+          />
         </div>
       </div>
     </div>

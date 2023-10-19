@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { ref, getCurrentInstance } from 'vue'
 import TopicCard from '../components/TopicCard.vue'
+import TopicSubSection from '@/types/TopicSubSection'
+import TopicCardData from '@/types/TopicCardData'
+import { transformTopicSectionOrSubSectionToCardData } from '@/types/TopicCardData'
 
 defineProps({
   data: {
@@ -11,33 +14,59 @@ defineProps({
 const instance = getCurrentInstance()
 const uid = ref('carroussel_' + instance?.uid)
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const splitChunks = (inputArray: any[], perChunk: number) => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return inputArray.reduce((all: any[], one: ConcatArray<never>, i: number) => {
-    const ch = Math.floor(i / perChunk)
-    all[ch] = [].concat(all[ch] || [], one)
-    return all
-  }, [])
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const limitCardsPerSections = (inputArray: any[], section_slug: string) => {
+/**
+ * Keep only the 10 first items of the input array. If more than 10 items
+ * where present in the list, a "magic/virtual" 11th item is created to indicate
+ * that more items are available.
+ * @param subsections - array of items to limit
+ * @param sectionSlug - amount of items per chunk
+ */
+const limitCardsPerSections = (
+  subsections: TopicSubSection[],
+  sectionSlug: string,
+): TopicCardData[] => {
   const maxCardPerSection = 10
-  if (inputArray.length > maxCardPerSection) {
-    const inputSliced = inputArray.slice(0, maxCardPerSection)
-    inputSliced.push({
+
+  if (subsections.length > maxCardPerSection) {
+    const slicedInput = subsections
+      .slice(0, maxCardPerSection)
+      .map(transformTopicSectionOrSubSectionToCardData)
+    slicedInput.push({
       kind: 'more',
-      count_more: inputArray.length - maxCardPerSection,
-      slug: section_slug,
-    })
-    return inputSliced
+      count_more: subsections.length - maxCardPerSection,
+      slug: sectionSlug,
+    } as TopicCardData)
+    return slicedInput
   }
-  return inputArray
+  return subsections.map(transformTopicSectionOrSubSectionToCardData)
 }
 
-const getSelector = (value: string) => {
-  return '#' + value
+/**
+ * Split an array of cards into chunks of cards. Each chunk is an array
+ * of cards, with at most perChunk cards.
+ * @param cards - array of cards to split into chunks
+ * @param cardsPerChunk - amount of cards per chunk
+ */
+const splitCardsListIntoChunks = (
+  cards: TopicCardData[],
+  cardsPerChunk: number,
+): TopicCardData[][] => {
+  return cards.reduce(
+    (all: TopicCardData[][], one: TopicCardData, i: number) => {
+      const ch = Math.floor(i / cardsPerChunk)
+      all[ch] = ([] as TopicCardData[]).concat(all[ch] || [], one)
+      return all
+    },
+    [],
+  )
+}
+
+/**
+ * Returns a class selector based on its name
+ * @param className name of class
+ */
+const getClassSelector = (className: string): string => {
+  return '#' + className
 }
 </script>
 
@@ -70,7 +99,7 @@ const getSelector = (value: string) => {
       <button
         class="carousel-control-prev"
         type="button"
-        :data-bs-target="getSelector(uid)"
+        :data-bs-target="getClassSelector(uid)"
         data-bs-slide="prev"
       >
         <span class="carousel-control-prev-icon" aria-hidden="true"></span>
@@ -78,7 +107,7 @@ const getSelector = (value: string) => {
       </button>
       <div class="carousel-inner">
         <div
-          v-for="(chunk, chunkIndex) in splitChunks(
+          v-for="(chunk, chunkIndex) in splitCardsListIntoChunks(
             limitCardsPerSections(data.subsections, data.slug),
             $grid.lg ? 4 : $grid.sm ? 2 : 1,
           )"
@@ -102,7 +131,7 @@ const getSelector = (value: string) => {
       <button
         class="carousel-control-next"
         type="button"
-        :data-bs-target="getSelector(uid)"
+        :data-bs-target="getClassSelector(uid)"
         data-bs-slide="next"
       >
         <span class="carousel-control-next-icon" aria-hidden="true"></span>

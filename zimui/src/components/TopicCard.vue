@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-
+import { PropType, ref } from 'vue'
+import TopicCardData from '@/types/TopicCardData'
 import imageData from '../assets/card_default_bg.png'
 
 const image = ref(imageData)
 
 defineProps({
   data: {
-    type: Object,
+    type: Object as PropType<TopicCardData>,
     required: true,
   },
 })

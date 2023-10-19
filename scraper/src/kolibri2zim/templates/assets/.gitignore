@@ -1,0 +1,10 @@
+bootstrap/
+pdfjs/
+videojs/
+jquery.min.js
+ogvjs/
+videojs-ogvjs.js
+epub.min.js
+bootstrap-icons/
+jszip.min.js
+perseus/

@@ -9,18 +9,17 @@ const route = useRoute()
 const params: Ref<RouteParams> = toRef(route, 'params')
 const topic: Ref<string> = ref(params.value.topic as string)
 
-const fetchData = async function () {
-  await main.fetchChannel()
+// update topic when route params are changed
+watch(params, () => {
   topic.value = params.value.topic as string
-  if (topic.value === undefined && main.channel_data != null) {
-    topic.value = main.channel_data['root']
+})
+
+// fetch channel data and set default topic if needed
+onMounted(async () => {
+  await main.fetchChannel()
+  if (topic.value === undefined && main.channelData != null) {
+    topic.value = main.channelData.rootSlug
   }
-}
-
-watch(params, fetchData)
-
-onMounted(() => {
-  fetchData()
 })
 
 import TopicHome from '../components/TopicHome.vue'
@@ -29,7 +28,7 @@ import TopicHome from '../components/TopicHome.vue'
 <template>
   <div class="d-flex flex-column h-100">
     <div class="flex-fill flex-shrink-0">
-      <TopicHome v-if="main.channel_data" :slug="topic" />
+      <TopicHome v-if="main.channelData" :slug="topic" />
     </div>
   </div>
 </template>

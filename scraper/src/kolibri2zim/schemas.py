@@ -1,7 +1,16 @@
+from humps import camelize
 from pydantic import BaseModel
 
 
-class TopicSubSection(BaseModel):
+class CamelModel(BaseModel):
+    """Model than transform Python snake_case into JSON camelCase"""
+
+    class Config:
+        alias_generator = camelize
+        populate_by_name = True
+
+
+class TopicSubSection(CamelModel):
     """One subclass to serialize data about one Kolibri topic"""
 
     slug: str
@@ -11,7 +20,7 @@ class TopicSubSection(BaseModel):
     thumbnail: str | None
 
 
-class TopicSection(BaseModel):
+class TopicSection(CamelModel):
     """Another subclass to serialize data about one Kolibri topic"""
 
     slug: str
@@ -22,7 +31,7 @@ class TopicSection(BaseModel):
     subsections: list[TopicSubSection]
 
 
-class Topic(BaseModel):
+class Topic(CamelModel):
     """Class to serialize data about one Kolibri topic
 
     One topic is composed of parents, sections and subsections.
@@ -30,14 +39,14 @@ class Topic(BaseModel):
     to current UI needs
     """
 
-    parents: list[str]
+    parents_slugs: list[str]
     title: str
     description: str
     sections: list[TopicSection]
     thumbnail: str | None
 
 
-class Channel(BaseModel):
+class Channel(CamelModel):
     """Class to serialize data about the Kolibri channel"""
 
-    root: str
+    root_slug: str
