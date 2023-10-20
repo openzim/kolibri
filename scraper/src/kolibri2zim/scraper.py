@@ -905,7 +905,7 @@ class Kolibri2Zim:
             return 1
         self.creator = Creator(
             filename=self.output_dir.joinpath(self.clean_fname),
-            main_path="index.html",
+            main_path="",
             ignore_duplicates=True,
         )
         self.creator.config_metadata(
@@ -1127,7 +1127,11 @@ class Kolibri2Zim:
                 continue
             path = str(Path(file).relative_to(self.zimui_dist))
             logger.debug(f"Adding {path} to ZIM")
-            self.creator.add_item_for(path, fpath=file, is_front=False)
+            self.creator.add_item_for(
+                path if path != "index.html" else "",
+                fpath=file,
+                is_front=path == "index.html",
+            )
 
     def add_custom_about_and_css(self):
         channel_meta = self.db.get_channel_metadata(self.channel_id)
