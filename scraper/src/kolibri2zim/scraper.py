@@ -905,7 +905,7 @@ class Kolibri2Zim:
             return 1
         self.creator = Creator(
             filename=self.output_dir.joinpath(self.clean_fname),
-            main_path="",
+            main_path="home",
             ignore_duplicates=True,
         )
         self.creator.config_metadata(
@@ -1128,7 +1128,7 @@ class Kolibri2Zim:
             path = str(Path(file).relative_to(self.zimui_dist))
             logger.debug(f"Adding {path} to ZIM")
             self.creator.add_item_for(
-                path if path != "index.html" else "",
+                path if path != "index.html" else "home",
                 fpath=file,
                 is_front=path == "index.html",
             )
