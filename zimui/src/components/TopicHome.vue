@@ -139,6 +139,11 @@ const parentSlug = (): string | null => {
           />
         </div>
       </div>
+      <div class="row">
+        <footer class="pt-2 pb-3">
+          <a href="./files/about">About this content</a>
+        </footer>
+      </div>
     </div>
   </div>
 </template>
@@ -178,5 +183,9 @@ const parentSlug = (): string | null => {
   height: 46px;
   background-color: rgba(18, 39, 42, 0.1);
   color: #12272a;
+}
+
+footer {
+  text-align: center;
 }
 </style>

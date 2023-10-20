@@ -1167,7 +1167,7 @@ class Kolibri2Zim:
                 title=title,
                 content=html,
                 mimetype="text/html",
-                is_front=False,
+                is_front=True,
             )
         del html
 
