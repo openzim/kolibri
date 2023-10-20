@@ -25,8 +25,10 @@ div {
   font-weight: 400;
   font-style: normal;
   font-display: swap;
-  src: url('./fonts/lato-v24-latin-regular.woff2') format('woff2'),
+  src:
     /* Chrome 36+, Opera 23+, Firefox 39+, Safari 12+, iOS 10+ */
-      url('./fonts/lato-v24-latin-regular.ttf') format('truetype'); /* Chrome 4+, Firefox 3.5+, IE 9+, Safari 3.1+, iOS 4.2+, Android Browser 2.2+ */
+    url('./fonts/lato-v24-latin-regular.woff2') format('woff2'),
+    /* Chrome 4+, Firefox 3.5+, IE 9+, Safari 3.1+, iOS 4.2+, Android Browser 2.2+ */
+      url('./fonts/lato-v24-latin-regular.ttf') format('truetype');
 }
 </style>

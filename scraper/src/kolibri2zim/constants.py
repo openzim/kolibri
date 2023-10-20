@@ -21,7 +21,7 @@ STUDIO_DEFAULT_BASE_URL = "https://studio.learningequality.org"
 STUDIO_URL = os.getenv("STUDIO_URL", STUDIO_DEFAULT_BASE_URL)
 
 # when modifiying this list, update list in hatch_build.py as well
-JS_DEPS: list[str] = [
+WEB_DEPS: list[str] = [
     "pdfjs",
     "videojs",
     "ogvjs",
@@ -32,6 +32,8 @@ JS_DEPS: list[str] = [
     "jszip.min.js",
     "jquery.min.js",
     "videojs-ogvjs.js",
+    "lato-v24-latin-regular.woff2",
+    "lato-v24-latin-regular.ttf",
 ]
 
 

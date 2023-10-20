@@ -8,7 +8,7 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 # update list in constants.py as well
-JS_DEPS = [
+WEB_DEPS = [
     "pdfjs",
     "videojs",
     "ogvjs",
@@ -19,6 +19,8 @@ JS_DEPS = [
     "jszip.min.js",
     "jquery.min.js",
     "videojs-ogvjs.js",
+    "lato-v24-latin-regular.woff2",
+    "lato-v24-latin-regular.ttf",
 ]
 
 
@@ -29,13 +31,13 @@ class GetJsDepsHook(BuildHookInterface):
             return
         Path(self.root).joinpath("src/kolibri2zim/templates/assets")
         subprocess.run(
-            str(Path(self.root).joinpath("get_js_deps.sh")),
+            str(Path(self.root).joinpath("get_web_deps.sh")),
             check=True,
         )
         return super().initialize(version, build_data)
 
     def deps_already_installed(self) -> bool:
-        for dep in JS_DEPS:
+        for dep in WEB_DEPS:
             if (
                 not Path(self.root)
                 .joinpath("src/kolibri2zim/templates/assets")

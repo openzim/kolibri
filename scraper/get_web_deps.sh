@@ -25,7 +25,7 @@ fi
 SCRIPT_PATH="$( cd "$(dirname "$0")" ; pwd -P )"
 ASSETS_PATH="${SCRIPT_PATH}/src/kolibri2zim/templates/assets"
 
-echo "About to download JS assets to ${ASSETS_PATH}"
+echo "About to download web assets to ${ASSETS_PATH}"
 
 echo "getting pdf.js"
 curl -L -O https://github.com/mozilla/pdf.js/releases/download/v2.6.347/pdfjs-2.6.347-es5-dist.zip
@@ -101,6 +101,11 @@ mv standalone-perseus-1.1.4/* $ASSETS_PATH/perseus
 rm -rf standalone-perseus-1.1.4/
 rm -f v1.1.4.zip
 sed -i $SEDEXT '1s/""/"..\/assets\/perseus\/"/' $ASSETS_PATH/perseus/build/frame-perseus.js
+
+echo "getting lato font"
+mkdir -p $ASSETS_PATH/fonts
+curl -L -o $ASSETS_PATH/fonts/lato-v24-latin-regular.ttf https://dev.kiwix.org/fonts/lato/lato-v24-latin-regular.ttf
+curl -L -o $ASSETS_PATH/fonts/lato-v24-latin-regular.woff2 https://dev.kiwix.org/fonts/lato/lato-v24-latin-regular.woff2
 
 if command -v fix_ogvjs_dist > /dev/null; then
     echo "fixing JS files"

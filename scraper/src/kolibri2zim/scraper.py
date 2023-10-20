@@ -33,7 +33,7 @@ from zimscraperlib.video.presets import VideoMp4Low, VideoWebmHigh, VideoWebmLow
 from zimscraperlib.zim.creator import Creator
 from zimscraperlib.zim.items import StaticItem
 
-from kolibri2zim.constants import JS_DEPS, ROOT_DIR, STUDIO_URL, Global, get_logger
+from kolibri2zim.constants import ROOT_DIR, STUDIO_URL, WEB_DEPS, Global, get_logger
 from kolibri2zim.database import KolibriDB
 from kolibri2zim.debug import (
     ON_DISK_THRESHOLD,
@@ -1186,9 +1186,9 @@ class Kolibri2Zim:
         logger.debug("Added about page and custom CSS")
 
     def ensure_js_deps_are_present(self):
-        for dep in JS_DEPS:
+        for dep in WEB_DEPS:
             if not self.templates_dir.joinpath(f"assets/{dep}").exists():
                 raise ValueError(
-                    "It looks like JS deps have not been installed,"
+                    "It looks like web deps have not been installed,"
                     f" {dep} is missing"
                 )

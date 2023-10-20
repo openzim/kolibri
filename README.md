@@ -19,7 +19,7 @@ Requirements
 * Node 20.x
 * Python 3.11
 * [`ffmpeg`](https://ffmpeg.org/) for video transcoding (only used with `--use-webm` or `--low-quality`).
-* `curl` and `unzip` to install Javascript dependencies. See `get_js_deps.sh` if you want to do it manually.
+* `curl` and `unzip` to install Javascript dependencies. See `get_web_deps.sh` if you want to do it manually.
 
 Installation
 ------------

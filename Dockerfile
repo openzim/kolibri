@@ -20,7 +20,7 @@ RUN apt-get update \
 
 # Copy pyproject.toml and its dependencies
 COPY README.md /src/
-COPY scraper/pyproject.toml scraper/get_js_deps.sh scraper/hatch_build.py /src/scraper/
+COPY scraper/pyproject.toml scraper/get_web_deps.sh scraper/hatch_build.py /src/scraper/
 COPY scraper/src/kolibri2zim/__about__.py /src/scraper/src/kolibri2zim/__about__.py
 
 # Install Python dependencies
