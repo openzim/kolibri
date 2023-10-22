@@ -16,7 +16,7 @@ const uid = ref('carroussel_' + instance?.uid)
 
 /**
  * Keep only the 10 first items of the input array. If more than 10 items
- * where present in the list, a "magic/virtual" 11th item is created to indicate
+ * were present in the list, a "magic/virtual" 11th item is created to indicate
  * that more items are available.
  * @param subsections - array of items to limit
  * @param sectionSlug - amount of items per chunk
@@ -52,10 +52,16 @@ const splitCardsListIntoChunks = (
   cardsPerChunk: number,
 ): TopicCardData[][] => {
   return cards.reduce(
-    (all: TopicCardData[][], one: TopicCardData, i: number) => {
-      const ch = Math.floor(i / cardsPerChunk)
-      all[ch] = ([] as TopicCardData[]).concat(all[ch] || [], one)
-      return all
+    (
+      cardsByChunks: TopicCardData[][],
+      oneCard: TopicCardData,
+      cardIndex: number,
+    ) => {
+      const chunkIndex = Math.floor(cardIndex / cardsPerChunk)
+      cardsByChunks[chunkIndex] = (cardsByChunks[chunkIndex] || []).concat(
+        oneCard,
+      )
+      return cardsByChunks
     },
     [],
   )
