@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>{{ title }}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/png" href="../favicon.png" />
+  <link rel="shortcut icon" type="image/x-icon" href="../favicon.ico" />
+  <meta name="description" content="{{ description }}">
+  <meta name="author" content="{% if author %}{{ author }}{% else %}Learning Equality{% endif %}">
+  {% block pre_head %}{% endblock %}
+  <link href="../assets/bootstrap/bootstrap.min.css" rel="stylesheet">
+  <link href="../assets/bootstrap-icons/bootstrap-icons.css" rel="stylesheet" />
+  <style type="text/css">
+/* kiwix-serve hack so we don't break the search form */
+form.kiwixsearch {
+  display: block !important;
+}
+  </style>
+  {% block head %}{% endblock %}
+  <link href="../custom.css" rel="stylesheet" />
+</head>
+<body>
+  <div class="container">
+    {% if false and parents_count %}
+    <!-- This navigation is broken due to the move to Vue.JS / slug-based URLs
+      To be fixed by https://github.com/openzim/kolibri/issues/64
+    -->
+    <nav style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
+      <ol class="breadcrumb">
+        {% for parent in parents %}
+        <li class="breadcrumb-item"><a href="./{{ parent.id }}">{{ parent.title }}</a></li>
+        {% endfor %}
+        <li class="breadcrumb-item active" aria-current="page">{{ title }}</li>
+      </ol>
+    </nav>
+    {% endif %}
+
+    <!-- This is a hack for epub rendering due to a probable bug in epub.js
+      The bug is that iframe is moved up when the epub is rendered
+      To be fixed by https://github.com/openzim/kolibri/issues/63
+    -->
+    {% if is_epub %}
+    <p style="height: 30px;">&nbsp;</p>
+    {% endif %}
+
+    {% block content %}{% endblock %}
+
+    {% block footer %}
+    <footer class="text-center">
+      <p><a href="./about">About this content</a></p>
+    </footer>
+    {% endblock %}
+  </div>
+<script src="../assets/bootstrap/bootstrap.bundle.min.js"></script>
+{% block script %}{% endblock %}
+</body>
+</html>

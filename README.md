@@ -16,30 +16,38 @@ HTML files folder of it before creating a ZIM off of it.
 Requirements
 ------------
 
+* Node 20.x
+* Python 3.11
 * [`ffmpeg`](https://ffmpeg.org/) for video transcoding (only used with `--use-webm` or `--low-quality`).
-* `curl` and `unzip` to install Javascript dependencies. See `get_js_deps.sh` if you want to do it manually.
+* `curl` and `unzip` to install Javascript dependencies. See `get_web_deps.sh` if you want to do it manually.
 
 Installation
 ------------
 
-## Virtualenv
+### Virtualenv
 
-`kolibri2zim` is a Python3 software. If you are not using the 
+`kolibri2zim` is a Python3 software. If you are not using the
 [Docker](https://docker.com) image, you are advised to use it in a
 virtual environment to avoid installing software dependencies on your system.
 
 ```bash
 python3 -m venv env      # Create virtualenv
-source env/bin/Activate  # Activate the virtualenv
+source env/bin/activate  # Activate the virtualenv
 pip3 install kolibri2zim # Install dependencies
 kolibri2zim --help       # Display kolibri2zim help
 ```
 
 Call `deactivate` to quit the virtual environment.
 
-See `requirements.txt` for the list of python dependencies.
+See `pyproject.toml` for the list of python dependencies.
 
-## Docker
+To test epubs and pdfs rendering, a potential usefull command is:
+
+```bash
+kolibri2zim --name "Biblioteca Elejandria" --output /output --tmp-dir /tmp --zim-file Biblioteca_Elejandria.zim --channel-id "fed29d60e4d84a1e8dcfc781d920b40e" --node-ids 'd92c07655128458f8248416154b18a68,89fe2f86ee3f4fbaa7fb2bf9bd56d088,75f99e6b97d14b14a4e74762ad77391f,89fe2f86ee3f4fbaa7fb2bf9bd56d088'
+```
+
+### Docker
 
 ```bash
 docker run -v my_dir:/output ghcr.io/openzim/kolibri2zim kolibri2zim --help
@@ -56,8 +64,34 @@ Development
 Before contributing be sure to check out the
 [CONTRIBUTING.md](CONTRIBUTING.md) guidelines.
 
-To test epubs and pdfs rendering, a potential usefull command is:
-```bash
+Some usefull test channels:
+
+- 7f744ce8d28b471eaf663abd60c92267: a very minimal channel with all kind of content
+- 9f15f4e9aeaa48b5ae271e5749d6fe80 : a small channel with significantly nested items and all kind of content
+
+### Build and running scraper locally
+
+You have to:
+
+- build the `zimui` frontend which will be embededed inside the ZIM (and redo it every time you make modifications to the `zimui`)
+- run the `scraper` to retrieve FCC curriculum and build the ZIM
+
+Sample commands:
+
+```
+cd zimui
+yarn install
+yarn build
+cd ../scraper
+hatch run kolibri2zim --name "Biblioteca Elejandria" --output output --zim-file Biblioteca_Elejandria.zim --channel-id "fed29d60e4d84a1e8dcfc781d920b40e" --node-ids 'd92c07655128458f8248416154b18a68,89fe2f86ee3f4fbaa7fb2bf9bd56d088,75f99e6b97d14b14a4e74762ad77391f,89fe2f86ee3f4fbaa7fb2bf9bd56d088'
+```
+
+### Running scraper with Docker
+
+Run from official version (published on GHCR.io) ; ZIM will be available in the `output` sub-folder of current working directory.
+
+```
+docker run --rm -it -v $(pwd)/output:/output ghcr.io/openzim/kolibri2zim:latest
 kolibri2zim --name "Biblioteca Elejandria" --output /output --tmp-dir /tmp --zim-file Biblioteca_Elejandria.zim --channel-id "fed29d60e4d84a1e8dcfc781d920b40e" --node-ids 'd92c07655128458f8248416154b18a68,89fe2f86ee3f4fbaa7fb2bf9bd56d088,75f99e6b97d14b14a4e74762ad77391f,89fe2f86ee3f4fbaa7fb2bf9bd56d088'
 ```
 
