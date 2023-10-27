@@ -12,8 +12,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Small fixes in invoke tasks
+- Force Python version to 3.11 (3.12 is not yet ready in our dependencies)
 
 ### Changed
+- Dockerfile: split installation of Python dependencies for more efficiency
+- Github workflow: publish `dev` tag on every push to `main` branch
+- Github workflow: build Docker image + test its startup
+- Github workflow: adopt new standard execution structure (`on` conditions)
 - Scraper (Python code) has been moved to the scraper subfolder
 - Vue.JS is now used as main UI framework ; all its code is in the zimui subfolder ; it is rendered with Vite to produce a static website
 - QA and Tests workflows have been adapted
@@ -39,10 +44,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - one new CLI argument --zimui-dist to specify the folder where zimui has been built (by Vite)
 
 
-- Dockerfile: split installation of Python dependencies for more efficiency
-- Github workflow: publish `dev` tag on every push to `main` branch
-- Github workflow: build Docker image + test its startup
-- Github workflow: adopt new standard execution structure (`on` conditions)
 
 ## [1.1.0] - 2023-07-25
 
