@@ -20,7 +20,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Github workflow: build Docker image + test its startup
 - Github workflow: adopt new standard execution structure (`on` conditions)
 - Scraper (Python code) has been moved to the scraper subfolder
-- Vue.JS is now used as main UI framework ; all its code is in the zimui subfolder ; it is rendered with Vite to produce a static website
+- Vue.JS is now used as main UI framework
+  - all its code is in the zimui subfolder
+  - it is rendered with Vite to produce a static website
+  - developpers instruction have been adapted
 - QA and Tests workflows have been adapted
     - to the new folder structure
     - to also QA and Test the Vue.JS part
