@@ -202,14 +202,20 @@ class Kolibri2Zim:
         """Compute a unique slug to be used as URL for a given node"""
         if node["id"] in self.nodes_ids_to_slugs:
             return self.nodes_ids_to_slugs[node["id"]]
-        slug = slugify(str(node.get("title", node["id"])))
+        if "title" in node:
+            slug = f"{slugify(node['title'])}-{node['id'][:4]}"
+        else:
+            slug = node["id"]
         if slug in self.nodes_ids_to_slugs.values():
-            suffix = 1
-            while True:
-                if f"{slug}_{suffix}" not in self.nodes_ids_to_slugs.values():
-                    break
-                suffix += 1
-            slug = f"{slug}_{suffix}"
+            # detect extreme case where we have a conflict
+            conflicting_node_id = {
+                slug: node_id for node_id, slug in self.nodes_ids_to_slugs.items()
+            }[slug]
+            logger.error(
+                f"Slug conflict detected between node {conflicting_node_id} and node"
+                f" {node['id']}, both have same slug {slug}"
+            )
+            raise Exception("Slug conflict, cannot proceed any further")
         self.nodes_ids_to_slugs[node["id"]] = slug
         return slug
 
