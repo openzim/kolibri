@@ -51,7 +51,7 @@ olibri Channel, with new Kolibri UI" --channel-id "7f744ce8d28b471eaf663abd60c92
 Extract interesting ZIM content and move it to `public` folder.
 
 ```
-find zimui/public/ -mindepth 1 -maxdepth 1 ! -name ".gitignore" -exec rm -r {} \;
+find zimui/public/ -mindepth 1 -maxdepth 1 ! -name ".gitignore" -delete
 docker run -it --rm -v $(pwd)/output:/data ghcr.io/openzim/zim-tools:latest zimdump dump --dir=/data/Minimal_Test /data/Minimal_Test.zim
 sudo chown -R $(id -u -n):$(id -g -n) output/Minimal_Test
 mv output/Minimal_Test/* zimui/public/
