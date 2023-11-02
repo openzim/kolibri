@@ -31,6 +31,13 @@ class TopicSection(CamelModel):
     subsections: list[TopicSubSection]
 
 
+class TopicParent(CamelModel):
+    """Information about a parent of one Kolibri topic"""
+
+    slug: str
+    title: str
+
+
 class Topic(CamelModel):
     """Class to serialize data about one Kolibri topic
 
@@ -39,7 +46,7 @@ class Topic(CamelModel):
     to current UI needs
     """
 
-    parents_slugs: list[str]
+    parents: list[TopicParent]
     title: str
     description: str
     sections: list[TopicSection]

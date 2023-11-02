@@ -22,14 +22,11 @@ form.kiwixsearch {
 </head>
 <body>
   <div class="container">
-    {% if false and parents_count %}
-    <!-- This navigation is broken due to the move to Vue.JS / slug-based URLs
-      To be fixed by https://github.com/openzim/kolibri/issues/64
-    -->
+    {% if parents_count %}
     <nav style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
       <ol class="breadcrumb">
         {% for parent in parents %}
-        <li class="breadcrumb-item"><a href="./{{ parent.id }}">{{ parent.title }}</a></li>
+        <li class="breadcrumb-item"><a href="../#/{{ parent.slug }}">{{ parent.title }}</a></li>
         {% endfor %}
         <li class="breadcrumb-item active" aria-current="page">{{ title }}</li>
       </ol>

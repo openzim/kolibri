@@ -59,22 +59,58 @@ const hasTopicAndNonTopicSection = (topics: TopicSectionType[]): boolean => {
 const hasParents = (): boolean => {
   return (
     topic.value != undefined &&
-    topic.value.parentsSlugs != undefined &&
-    topic.value.parentsSlugs.length > 0
+    topic.value.parents != undefined &&
+    topic.value.parents.length > 0
   )
 }
 
 /** Return the slug of the last parent in the parents hierarchy */
 const parentSlug = (): string | null => {
-  if (!topic.value || !topic.value.parentsSlugs) {
+  if (!topic.value || !topic.value.parents || topic.value.parents.length == 0) {
     return null
   }
-  return topic.value.parentsSlugs[topic.value.parentsSlugs.length - 1]
+  return topic.value.parents[topic.value.parents.length - 1].slug
 }
 </script>
 
 <template>
   <div v-if="topic" class="content">
+    <nav
+      class="navbar navbar px-0 channel-navbar navbar-light fixed-top navbar-expand shadow"
+    >
+      <div class="justify-content-start mx-3 container-fluid">
+        <ul aria-label="breadcrumb" class="navbar-nav">
+          <ol class="bg-transparent breadcrumb flex-nowrap px-2 mt-3">
+            <li
+              v-if="topic.parents.length > ($grid.md ? 2 : 1)"
+              class="active breadcrumb-item text-truncate"
+              title="..."
+            >
+              ...
+            </li>
+            <li
+              v-for="(parent, parentIndex) in topic.parents.slice(
+                $grid.md ? -2 : -1,
+              )"
+              :key="parentIndex"
+              :data="parent"
+              class="breadcrumb-item text-truncate"
+              :title="parent.title"
+            >
+              <router-link :to="`./${parent.slug}`">{{
+                parent.title
+              }}</router-link>
+            </li>
+            <li
+              class="active breadcrumb-item text-truncate"
+              :title="topic.title"
+            >
+              {{ topic.title }}
+            </li>
+          </ol>
+        </ul>
+      </div>
+    </nav>
     <div class="jumbotron" :class="{ 'with-description': topic.description }">
       <div class="container">
         <div
@@ -162,6 +198,31 @@ const parentSlug = (): string | null => {
   -webkit-line-clamp: 6;
   -webkit-box-orient: vertical;
   overflow-wrap: break-word;
+}
+
+.navbar {
+  background-color: #12272a;
+  height: 3.5rem;
+  transition:
+    color 0.15s ease-in-out,
+    background-color 0.15s ease-in-out,
+    border-color 0.15s ease-in-out,
+    box-shadow 0.15s ease-in-out;
+}
+
+.breadcrumb-item a {
+  text-decoration: underline;
+  color: #a1a8a9;
+}
+.breadcrumb-item {
+  color: #a1a8a9 !important;
+}
+
+.breadcrumb-item + .breadcrumb-item::before {
+  float: left;
+  padding-right: 0.5rem;
+  color: #a1a8a9;
+  content: '>';
 }
 
 .jumbotron {
