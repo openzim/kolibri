@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 name = "kolibri2zim"
 authors = [{ name = "Kiwix", email = "dev@kiwix.org" }]
 keywords = ["kiwix", "zim", "offline", "kolibri"]
-requires-python = ">=3.11"
+requires-python = ">=3.11,<3.12"
 description = "Make ZIM file from Kolibri Channels"
 readme = "README.md"
 license = { text = "GPL-3.0-or-later" }
