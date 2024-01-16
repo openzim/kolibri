@@ -8,9 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Language metadata can be customized (#77)
 - New html option in coverage report
 
 ### Fixed
+- Name metadadata is not set correctly (#76)
+- Default publisher is not correctly spelled (#78)
+- Adapt to hatchling v1.19.0 which mandates packages setting (#79)
 - Small fixes in invoke tasks
 
 ### Changed

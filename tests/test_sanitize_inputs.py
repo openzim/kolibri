@@ -1,13 +1,16 @@
 import random
+import re
 import string
 from collections.abc import Callable
 
 import pytest
+from conftest import FakeDb
 from zimscraperlib.constants import MAXIMUM_DESCRIPTION_METADATA_LENGTH as MAX_DESC_LEN
 from zimscraperlib.constants import (
     MAXIMUM_LONG_DESCRIPTION_METADATA_LENGTH as MAX_LONG_DESC_LEN,
 )
 
+from kolibri2zim.entrypoint import parse_args
 from kolibri2zim.scraper import Kolibri2Zim
 
 
@@ -191,3 +194,31 @@ def test_description(
 
     assert scraper.description == expected_description
     assert scraper.long_description == expected_long_description
+
+
+def test_no_required_args():
+    with pytest.raises(expected_exception=SystemExit):
+        parse_args([])
+
+
+def test_defaults_args(channel_name, channel_description, channel_author, zim_name):
+    args = parse_args(["--name", zim_name])
+    scraper = Kolibri2Zim(**dict(args._get_kwargs()))
+    scraper.db = FakeDb(
+        channel_name=channel_name,
+        channel_description=channel_description,
+        channel_author=channel_author,
+    )
+    scraper.sanitize_inputs()
+    assert scraper.language == "eng"
+    assert scraper.publisher == "openZIM"
+    assert scraper.author == channel_author
+    assert scraper.title == channel_name
+    assert scraper.description == channel_description
+    assert scraper.name == zim_name
+    assert re.match(
+        pattern=f"{zim_name}_\\d{{4}}-\\d{{2}}\\.zim", string=scraper.clean_fname
+    )
+    # We compare sets because ordering does not matter
+    assert set(scraper.tags) == {"_category:other", "kolibri", "_videos:yes"}
+    assert len(scraper.tags) == 3

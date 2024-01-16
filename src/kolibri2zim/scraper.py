@@ -120,6 +120,7 @@ class Kolibri2Zim:
         self.author = go("creator")
         self.publisher = go("publisher")
         self.name = go("name")
+        self.language = go("lang")
 
         # customization
         self.favicon = go("favicon")
@@ -784,6 +785,7 @@ class Kolibri2Zim:
             f"  description: {self.description}\n"
             f"  creator: {self.author}\n"
             f"  publisher: {self.publisher}\n"
+            f"  language: {self.language}\n"
             f"  tags: {';'.join(self.tags)}"
         )
 
@@ -815,8 +817,8 @@ class Kolibri2Zim:
             ignore_duplicates=True,
         )
         self.creator.config_metadata(
-            Name=self.clean_fname,
-            Language="eng",
+            Name=self.name,  # pyright: ignore reportGeneralTypeIssues
+            Language=self.language,  # pyright: ignore reportGeneralTypeIssues
             Title=self.title,
             Description=self.description,
             LongDescription=self.long_description,
@@ -966,7 +968,7 @@ class Kolibri2Zim:
         self.author = self.author.strip()
 
         if not self.publisher:
-            self.publisher = "Openzim"
+            self.publisher = "openZIM"
         self.publisher = self.publisher.strip()
 
         self.tags = list({*self.tags, "_category:other", "kolibri", "_videos:yes"})

@@ -5,9 +5,10 @@ import argparse
 import sys
 
 from kolibri2zim.constants import NAME, SCRAPER, Global, get_logger, set_debug
+from kolibri2zim.scraper import Kolibri2Zim
 
 
-def main():
+def parse_args(raw_args):
     parser = argparse.ArgumentParser(
         prog=NAME,
         description="Scraper to create ZIM files from Kolibri channels",
@@ -35,6 +36,13 @@ def main():
         "--name",
         help="ZIM name. Used as identifier and filename (date will be appended)",
         required=True,
+    )
+
+    parser.add_argument(
+        "--lang",
+        help="ZIM Language, used in metadata (should be a ISO-639-3 language code). "
+        "If unspecified, scraper will use 'eng'",
+        default="eng",
     )
 
     parser.add_argument(
@@ -79,7 +87,8 @@ def main():
     )
 
     parser.add_argument(
-        "--publisher", help="Custom publisher name (ZIM metadata). “OpenZIM” otherwise"
+        "--publisher",
+        help="Custom publisher name (ZIM metadata). “openZIM” otherwise",
     )
 
     parser.add_argument(
@@ -192,12 +201,13 @@ def main():
         action="version",
         version=SCRAPER,
     )
+    return parser.parse_args(raw_args)
 
-    args = parser.parse_args()
+
+def main():
+    args = parse_args(sys.argv[1:])
     set_debug(args.debug)
     logger = get_logger()
-
-    from kolibri2zim.scraper import Kolibri2Zim
 
     try:
         scraper = Kolibri2Zim(**dict(args._get_kwargs()))
