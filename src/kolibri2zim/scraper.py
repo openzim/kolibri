@@ -968,7 +968,7 @@ class Kolibri2Zim:
         self.author = self.author.strip()
 
         if not self.publisher:
-            self.publisher = "Openzim"
+            self.publisher = "openZIM"
         self.publisher = self.publisher.strip()
 
         self.tags = list({*self.tags, "_category:other", "kolibri", "_videos:yes"})

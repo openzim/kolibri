@@ -86,7 +86,8 @@ def main():
     )
 
     parser.add_argument(
-        "--publisher", help="Custom publisher name (ZIM metadata). “OpenZIM” otherwise"
+        "--publisher",
+        help="Custom publisher name (ZIM metadata). “openZIM” otherwise",
     )
 
     parser.add_argument(
