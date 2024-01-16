@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Language metadata can be customized (#77)
 - New html option in coverage report
 
 ### Fixed

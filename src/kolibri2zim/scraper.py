@@ -120,6 +120,7 @@ class Kolibri2Zim:
         self.author = go("creator")
         self.publisher = go("publisher")
         self.name = go("name")
+        self.language = go("lang")
 
         # customization
         self.favicon = go("favicon")
@@ -784,6 +785,7 @@ class Kolibri2Zim:
             f"  description: {self.description}\n"
             f"  creator: {self.author}\n"
             f"  publisher: {self.publisher}\n"
+            f"  language: {self.language}\n"
             f"  tags: {';'.join(self.tags)}"
         )
 
@@ -816,7 +818,7 @@ class Kolibri2Zim:
         )
         self.creator.config_metadata(
             Name=self.clean_fname,
-            Language="eng",
+            Language=self.language,  # pyright: ignore reportGeneralTypeIssues
             Title=self.title,
             Description=self.description,
             LongDescription=self.long_description,

@@ -38,6 +38,13 @@ def main():
     )
 
     parser.add_argument(
+        "--lang",
+        help="ZIM Language, used in metadata (should be a ISO-639-3 language code). "
+        "If unspecified, scraper will use 'eng'",
+        default="eng",
+    )
+
+    parser.add_argument(
         "--title",
         help="Custom title for your ZIM. Kolibri channel name otherwise",
     )
