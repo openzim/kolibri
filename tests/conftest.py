@@ -6,9 +6,6 @@ import pytest
 from kolibri2zim.scraper import Kolibri2Zim, KolibriDB
 from kolibri2zim.scraper import options as expected_options_keys
 
-CHANNEL_NAME = "channel_name"
-CHANNEL_DESCRIPTION = "a description"
-
 
 class FakeDb(KolibriDB):
     def __init__(
@@ -30,10 +27,32 @@ class FakeDb(KolibriDB):
 
 
 @pytest.fixture()
-def scraper_generator() -> Generator[Callable[..., Kolibri2Zim], None, None]:
+def channel_name() -> Generator[str, None, None]:
+    yield "channel name"
+
+
+@pytest.fixture()
+def channel_description() -> Generator[str, None, None]:
+    yield "channel description"
+
+
+@pytest.fixture()
+def channel_author() -> Generator[str, None, None]:
+    yield "channel author"
+
+
+@pytest.fixture()
+def zim_name() -> Generator[str, None, None]:
+    yield "a_name"
+
+
+@pytest.fixture()
+def scraper_generator(
+    channel_name, channel_description
+) -> Generator[Callable[..., Kolibri2Zim], None, None]:
     def _scraper(
-        channel_name: str = CHANNEL_NAME,
-        channel_description: str = CHANNEL_DESCRIPTION,
+        channel_name: str = channel_name,
+        channel_description: str = channel_description,
         channel_author: str | None = None,
         additional_options: dict[str, Any] | None = None,
     ) -> Kolibri2Zim:
