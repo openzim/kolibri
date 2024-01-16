@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - New html option in coverage report
 
 ### Fixed
+- Adapt to hatchling v1.19.0 which mandates packages setting (#79)
 - Small fixes in invoke tasks
 
 ### Changed
