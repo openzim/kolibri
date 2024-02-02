@@ -32,7 +32,7 @@ from zimscraperlib.video.presets import VideoMp4Low, VideoWebmHigh, VideoWebmLow
 from zimscraperlib.zim.creator import Creator
 from zimscraperlib.zim.items import StaticItem
 
-from kolibri2zim.constants import JS_DEPS, ROOT_DIR, STUDIO_URL, Global, get_logger
+from kolibri2zim.constants import JS_DEPS, ROOT_DIR, STUDIO_URL, Global
 from kolibri2zim.database import KolibriDB
 from kolibri2zim.debug import (
     ON_DISK_THRESHOLD,
@@ -41,7 +41,7 @@ from kolibri2zim.debug import (
     safer_reencode,
 )
 
-logger = get_logger()
+logger = Global.logger
 options = [
     "debug",
     "name",

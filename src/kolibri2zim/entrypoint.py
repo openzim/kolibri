@@ -4,7 +4,7 @@
 import argparse
 import sys
 
-from kolibri2zim.constants import NAME, SCRAPER, Global, get_logger, set_debug
+from kolibri2zim.constants import NAME, SCRAPER, Global
 from kolibri2zim.scraper import Kolibri2Zim
 
 
@@ -206,8 +206,10 @@ def parse_args(raw_args):
 
 def main():
     args = parse_args(sys.argv[1:])
-    set_debug(args.debug)
-    logger = get_logger()
+    if args.debug:
+        for handler in Global.logger.handlers:
+            handler.setLevel("DEBUG")
+    logger = Global.logger
 
     try:
         scraper = Kolibri2Zim(**dict(args._get_kwargs()))

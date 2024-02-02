@@ -50,21 +50,11 @@ def is_running_inside_container():
 
 
 class Global:
-    debug = False
     inside_container = is_running_inside_container()
+    logger = lib_getLogger(NAME, logging.INFO)
     nb_available_cpus: int
 
 
 Global.nb_available_cpus = (
     1 if Global.inside_container else multiprocessing.cpu_count() - 1 or 1
 )
-
-
-def set_debug(debug):
-    """toggle constants global DEBUG flag (used by getLogger)"""
-    Global.debug = bool(debug)
-
-
-def get_logger():
-    """configured logger respecting DEBUG flag"""
-    return lib_getLogger(NAME, level=logging.DEBUG if Global.debug else logging.INFO)
