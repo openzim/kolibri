@@ -34,5 +34,4 @@ JS_DEPS: list[str] = [
 ]
 
 
-class Global:
-    logger = lib_getLogger(NAME, logging.INFO)
+logger = lib_getLogger(NAME, logging.INFO)
