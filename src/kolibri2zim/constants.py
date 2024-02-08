@@ -2,7 +2,6 @@
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 import logging
-import multiprocessing
 import os
 import pathlib
 
@@ -35,26 +34,5 @@ JS_DEPS: list[str] = [
 ]
 
 
-def is_running_inside_container():
-    fpath = pathlib.Path("/proc/self/cgroup")
-    if not fpath.exists():
-        return False
-    try:
-        with open(fpath) as fh:
-            for line in fh.readlines():
-                if line.strip().rsplit(":", 1)[-1] != "/":
-                    return True
-    finally:
-        pass
-    return False
-
-
 class Global:
-    inside_container = is_running_inside_container()
     logger = lib_getLogger(NAME, logging.INFO)
-    nb_available_cpus: int
-
-
-Global.nb_available_cpus = (
-    1 if Global.inside_container else multiprocessing.cpu_count() - 1 or 1
-)

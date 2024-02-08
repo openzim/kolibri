@@ -160,11 +160,10 @@ def parse_args(raw_args):
 
     parser.add_argument(
         "--processes",
-        help="Number of processes to dedicate to media optimizations. "
-        "Defaults to number of available CPU threads visible minus 1 except when run "
-        "inside a container (Docker) where we default to 1 as the detected CPUs are "
-        f"the ones of the host. Default: {Global.nb_available_cpus}",
-        default=Global.nb_available_cpus,
+        help="Number of processes to use to handle video compression. "
+        "Increase when many CPUs are available and video compression is configured to "
+        "use only one CPU. Default: 1",
+        default=1,
         type=int,
     )
 
