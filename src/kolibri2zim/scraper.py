@@ -13,6 +13,7 @@ import shutil
 import tempfile
 import threading
 import zipfile
+from contextlib import contextmanager
 from pathlib import Path
 
 import jinja2
@@ -448,6 +449,13 @@ class Kolibri2Zim:
             )
         logger.debug(f"Added video #{node_id}")
 
+    @contextmanager
+    def cleanup_future_once_done(self, future):
+        try:
+            yield
+        finally:
+            self.videos_futures.remove(future)
+
     def video_conversion_completed(
         self, future, src_fname, dest_fpath, path, s3_key, s3_meta
     ):
@@ -458,37 +466,36 @@ class Kolibri2Zim:
         - delete converted video
         """
 
-        self.videos_futures.remove(future)
+        with self.cleanup_future_once_done(future):
+            if future.cancelled():
+                return
 
-        if future.cancelled():
-            return
+            try:
+                future.result()
+            except Exception as exc:
+                logger.error(f"Error re-encoding {src_fname}: {exc}")
+                logger.exception(exc)
+                return
 
-        try:
-            future.result()
-        except Exception as exc:
-            logger.error(f"Error re-encoding {src_fname}: {exc}")
-            logger.exception(exc)
-            return
+            logger.debug(f"Re-encoded {src_fname} successfuly")
 
-        logger.debug(f"Re-encoded {src_fname} successfuly")
+            kwargs = {
+                "path": path,
+                "filepath": dest_fpath,
+                "mimetype": get_file_mimetype(dest_fpath),
+            }
 
-        kwargs = {
-            "path": path,
-            "filepath": dest_fpath,
-            "mimetype": get_file_mimetype(dest_fpath),
-        }
-
-        with self.creator_lock:
-            self.creator.add_item(
-                StaticItem(**kwargs),
-                callback=functools.partial(
-                    self.converted_video_added_to_zim,
-                    dest_fpath=dest_fpath,
-                    s3_key=s3_key,
-                    s3_meta=s3_meta,
-                ),
-            )
-        logger.debug(f"Added {path} from re-encoded file")
+            with self.creator_lock:
+                self.creator.add_item(
+                    StaticItem(**kwargs),
+                    callback=functools.partial(
+                        self.converted_video_added_to_zim,
+                        dest_fpath=dest_fpath,
+                        s3_key=s3_key,
+                        s3_meta=s3_meta,
+                    ),
+                )
+            logger.debug(f"Added {path} from re-encoded file")
 
     def convert_and_add_video_aside(
         self, file_id, src_fpath, src_checksum, dest_fpath, path, preset
