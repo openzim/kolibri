@@ -179,9 +179,13 @@ class Kolibri2Zim:
     def populate_nodes_executor(self):
         """Loop on content nodes to create zim entries from kolibri DB"""
 
+        def remove_future(future):
+            self.nodes_futures.remove(future)
+
         def schedule_node(item):
             future = self.nodes_executor.submit(self.add_node, item=item)
-            self.nodes_futures.update({future: item[0]})
+            self.nodes_futures.add(future)
+            future.add_done_callback(remove_future)
 
         # schedule root-id
         schedule_node((self.db.root["id"], self.db.root["kind"]))
@@ -454,6 +458,9 @@ class Kolibri2Zim:
         - upload converted video to cache if configured
         - delete converted video
         """
+
+        self.videos_futures.remove(future)
+
         if future.cancelled():
             return
 
@@ -498,7 +505,7 @@ class Kolibri2Zim:
             with_process=False,
             failsafe=False,
         )
-        self.videos_futures.update({future: (src_fpath.name, dest_fpath, path)})
+        self.videos_futures.add(future)
         future.add_done_callback(
             functools.partial(
                 self.video_conversion_completed,
@@ -849,11 +856,11 @@ class Kolibri2Zim:
             self.add_local_files("assets", self.templates_dir.joinpath("assets"))
 
             # setup queue for nodes processing
-            self.nodes_futures = {}  # future: node_id
+            self.nodes_futures = set()
             self.nodes_executor = cf.ThreadPoolExecutor(max_workers=self.nb_threads)
 
             # setup a dedicated queue for videos to convert
-            self.videos_futures = {}  # future: src_fname, dst_fpath, path
+            self.videos_futures = set()
             self.videos_executor = cf.ProcessPoolExecutor(max_workers=self.nb_processes)
 
             logger.info("Starting nodes processing")
@@ -861,7 +868,7 @@ class Kolibri2Zim:
 
             # await completion of all futures (nodes and videos)
             result = cf.wait(
-                self.videos_futures.keys() | self.nodes_futures.keys(),
+                self.videos_futures | self.nodes_futures,
                 return_when=cf.FIRST_EXCEPTION,
             )
             self.nodes_executor.shutdown()
