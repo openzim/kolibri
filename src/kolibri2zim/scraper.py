@@ -4,9 +4,11 @@
 import base64
 import concurrent.futures as cf
 import datetime
+import functools
 import hashlib
 import io
 import json
+import os
 import shutil
 import tempfile
 import threading
@@ -443,15 +445,16 @@ class Kolibri2Zim:
             )
         logger.debug(f"Added video #{node_id}")
 
-    def add_video_upon_completion(self, future):
-        """adds the converted video inside this future to the zim
+    def video_conversion_completed(
+        self, future, src_fname, dest_fpath, path, s3_key, s3_meta
+    ):
+        """Perform needed duty once video conversion has completed
 
-        logs error in case of failure"""
+        - adds the converted video inside this future to the zim
+        - upload converted video to cache if configured
+        - delete converted video
+        """
         if future.cancelled():
-            return
-        try:
-            src_fname, dst_fpath, path = self.videos_futures[future]
-        except KeyError:
             return
 
         try:
@@ -465,20 +468,20 @@ class Kolibri2Zim:
 
         kwargs = {
             "path": path,
-            "filepath": dst_fpath,
-            "mimetype": get_file_mimetype(dst_fpath),
+            "filepath": dest_fpath,
+            "mimetype": get_file_mimetype(dest_fpath),
         }
-        # we shall request s3 upload on the threads pool, only once item has been
-        # added to ZIM so it can be removed altogether
-        if self.s3_storage:
-            kwargs.update({"callback": self.request_s3_upload_and_removal})
-
-        # simply add the item, autodeleting the file
-        else:
-            kwargs.update({"remove": True})
 
         with self.creator_lock:
-            self.creator.add_item(StaticItem(**kwargs))
+            self.creator.add_item(
+                StaticItem(**kwargs),
+                callback=functools.partial(
+                    self.converted_video_added_to_zim,
+                    dest_fpath=dest_fpath,
+                    s3_key=s3_key,
+                    s3_meta=s3_meta,
+                ),
+            )
         logger.debug(f"Added {path} from re-encoded file")
 
     def convert_and_add_video_aside(
@@ -496,28 +499,35 @@ class Kolibri2Zim:
             failsafe=False,
         )
         self.videos_futures.update({future: (src_fpath.name, dest_fpath, path)})
-        self.pending_upload.update(
-            {
-                path: (
-                    dest_fpath,
-                    self.s3_key_for(file_id, preset),
-                    {"checksum": src_checksum, "encoder_version": str(preset.VERSION)},
-                )
-            }
+        future.add_done_callback(
+            functools.partial(
+                self.video_conversion_completed,
+                src_fname=src_fpath.name,
+                dest_fpath=dest_fpath,
+                path=path,
+                s3_key=self.s3_key_for(file_id, preset),
+                s3_meta={
+                    "checksum": src_checksum,
+                    "encoder_version": str(preset.VERSION),
+                },
+            )
         )
-        future.add_done_callback(self.add_video_upon_completion)
 
-    def request_s3_upload_and_removal(self, item):
-        """add file from item to uploads list"""
-        path = item.path
-        del item
-        try:
-            dest_fpath, key, meta = self.pending_upload[path]
-        except KeyError:
-            return
-        # TODO: submit to a thread executor (to create) instead
-        # this is currently called on main-tread.
-        self.upload_to_s3(key, dest_fpath, **meta)
+    def converted_video_added_to_zim(self, dest_fpath, s3_key, s3_meta):
+        """Perform needed duty once video has been added to the ZIM
+
+        - upload converted video to cache if configured
+        - delete converted video
+        """
+
+        if self.s3_storage:
+            # we shall request s3 upload on the threads pool, only once item has been
+            # added to ZIM so it can be removed altogether
+            # TODO: submit to a thread executor (to create) instead
+            # this is currently called on main-tread.
+            self.upload_to_s3(s3_key, dest_fpath, **s3_meta)
+
+        os.unlink(dest_fpath)
 
     def add_audio_node(self, node_id):
         """Add content from this `audio` node to zim
@@ -844,7 +854,6 @@ class Kolibri2Zim:
 
             # setup a dedicated queue for videos to convert
             self.videos_futures = {}  # future: src_fname, dst_fpath, path
-            self.pending_upload = {}  # path: filepath, key, checksum
             self.videos_executor = cf.ProcessPoolExecutor(max_workers=self.nb_processes)
 
             logger.info("Starting nodes processing")
