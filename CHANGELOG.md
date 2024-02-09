@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Fix caching of re-encoded video files (#82)
+- Do not start multiple video processing threads by default (`--processes` default value) (partial fix of #83)
+- Fix logging issue in DEBUG mode
+
 ## [1.1.1] - 2024-01-16
 
 ### Added

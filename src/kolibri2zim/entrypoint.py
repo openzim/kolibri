@@ -4,7 +4,7 @@
 import argparse
 import sys
 
-from kolibri2zim.constants import NAME, SCRAPER, Global, get_logger, set_debug
+from kolibri2zim.constants import NAME, SCRAPER, logger
 from kolibri2zim.scraper import Kolibri2Zim
 
 
@@ -160,11 +160,10 @@ def parse_args(raw_args):
 
     parser.add_argument(
         "--processes",
-        help="Number of processes to dedicate to media optimizations. "
-        "Defaults to number of available CPU threads visible minus 1 except when run "
-        "inside a container (Docker) where we default to 1 as the detected CPUs are "
-        f"the ones of the host. Default: {Global.nb_available_cpus}",
-        default=Global.nb_available_cpus,
+        help="Number of processes to use to handle video compression. "
+        "Increase when many CPUs are available and video compression is configured to "
+        "use only one CPU. Default: 1",
+        default=1,
         type=int,
     )
 
@@ -206,8 +205,9 @@ def parse_args(raw_args):
 
 def main():
     args = parse_args(sys.argv[1:])
-    set_debug(args.debug)
-    logger = get_logger()
+    if args.debug:
+        for handler in logger.handlers:
+            handler.setLevel("DEBUG")
 
     try:
         scraper = Kolibri2Zim(**dict(args._get_kwargs()))
