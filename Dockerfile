@@ -1,4 +1,4 @@
-FROM python:3.11-bookworm
+FROM python:3.12-bookworm
 LABEL org.opencontainers.image.source https://github.com/openzim/kolibri
 
 # Install necessary packages
@@ -12,7 +12,7 @@ RUN apt-get update \
       pip
 
 # Copy pyproject.toml and its dependencies
-COPY pyproject.toml README.md get_js_deps.sh hatch_build.py /src/
+COPY pyproject.toml openzim.toml README.md /src/
 COPY src/kolibri2zim/__about__.py /src/src/kolibri2zim/__about__.py
 
 # Install Python dependencies
