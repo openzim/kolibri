@@ -840,8 +840,8 @@ class Kolibri2Zim:
             ignore_duplicates=True,
         )
         self.creator.config_metadata(
-            Name=self.name,  # pyright: ignore reportGeneralTypeIssues
-            Language=self.language,  # pyright: ignore reportGeneralTypeIssues
+            Name=self.name,  # pyright: ignore[reportArgumentType]
+            Language=self.language,  # pyright: ignore[reportArgumentType]
             Title=self.title,
             Description=self.description,
             LongDescription=self.long_description,

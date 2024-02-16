@@ -24,7 +24,7 @@ Installation
 
 ## Virtualenv
 
-`kolibri2zim` is a Python3 software. If you are not using the 
+`kolibri2zim` is a Python3 software. If you are not using the
 [Docker](https://docker.com) image, you are advised to use it in a
 virtual environment to avoid installing software dependencies on your system.
 
@@ -52,6 +52,10 @@ Usage
 
 Development
 -----------
+
+kolibri2zim adheres to openZIM's [Contribution Guidelines](https://github.com/openzim/overview/wiki/Contributing).
+
+kolibri2zim has implemented openZIM's [Python bootstrap, conventions and policies](https://github.com/openzim/_python-bootstrap/docs/Policy.md) **v1.0.0**.
 
 Before contributing be sure to check out the
 [CONTRIBUTING.md](CONTRIBUTING.md) guidelines.

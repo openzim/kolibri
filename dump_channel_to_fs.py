@@ -57,6 +57,7 @@ def download_if_missing(url, fpath, fsize=None, *, force=False):
                 url,
             ],
             text=True,
+            check=False,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
         )
