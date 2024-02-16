@@ -1,0 +1,95 @@
+[files.assets.config]
+target_dir="src/kolibri2zim/templates/assets"
+execute_after=[
+    "fix_ogvjs_dist .",
+]
+
+[files.assets.actions."pdf.js"]
+action="extract_all"
+source="https://github.com/mozilla/pdf.js/releases/download/v2.6.347/pdfjs-2.6.347-es5-dist.zip"
+target_dir="pdfjs"
+remove = [
+    "web/compressed.tracemonkey-pldi-09.pdf",
+    "build/*.map",
+    "web/cmaps",
+    "web/debugger.js",
+    "web/*.map",
+    "LICENSE",
+]
+
+[files.assets.actions."epub.js"]
+action="get_file"
+source="https://github.com/futurepress/epub.js/releases/download/v0.3.88/epub.min.js"
+target_file="epub.min.js"
+
+[files.assets.actions."jszip.js"]
+action="extract_items"
+source="https://github.com/Stuk/jszip/archive/v3.5.0.zip"
+zip_paths=["jszip-3.5.0/dist/jszip.min.js"]
+target_paths=["jszip.min.js"]
+
+[files.assets.actions."video.js"]
+action="extract_all"
+source="https://github.com/videojs/video.js/releases/download/v7.8.1/video-js-7.8.1.zip"
+target_dir="videojs"
+remove = ["alt","examples",]
+
+[files.assets.actions."jquery.min.js"]
+action="get_file"
+source="https://code.jquery.com/jquery-3.5.1.min.js"
+target_file="jquery.min.js"
+
+[files.assets.actions."ogv.js"]
+action="extract_items"
+source="https://github.com/brion/ogv.js/releases/download/1.6.1/ogvjs-1.6.1.zip"
+zip_paths=["ogvjs-1.6.1"]
+target_paths=["ogvjs"]
+remove = ["ogvjs/*.txt","ogvjs/*.md",]
+
+[files.assets.actions."videojs-ogvjs.js"]
+action="extract_items"
+source="https://github.com/hartman/videojs-ogvjs/archive/v1.3.1.zip"
+zip_paths=["videojs-ogvjs-1.3.1/dist/videojs-ogvjs.js"]
+target_paths=["videojs-ogvjs.js"]
+
+[files.assets.actions."bootstrap"]
+action="extract_items"
+source="https://github.com/twbs/bootstrap/releases/download/v5.0.0-beta2/bootstrap-5.0.0-beta2-dist.zip"
+zip_paths=[
+    "bootstrap-5.0.0-beta2-dist/css/bootstrap.min.css",
+    "bootstrap-5.0.0-beta2-dist/css/bootstrap.rtl.min.css",
+    "bootstrap-5.0.0-beta2-dist/js/bootstrap.bundle.min.js",
+    "bootstrap-5.0.0-beta2-dist/js/bootstrap.min.js",
+]
+target_paths=[
+    "bootstrap/bootstrap.min.css",
+    "bootstrap/bootstrap.rtl.min.css",
+    "bootstrap/bootstrap.bundle.min.js",
+    "bootstrap/bootstrap.min.js",
+]
+
+[files.assets.actions."bootstrap-icons"]
+action="extract_items"
+source="https://github.com/twbs/icons/archive/v1.4.0.zip"
+zip_paths=[
+    "icons-1.4.0/font",
+]
+target_paths=[
+    "bootstrap-icons",
+]
+remove=[
+    "bootstrap-icons/index.html",
+    "bootstrap-icons/bootstrap-icons.json",
+]
+
+[files.assets.actions."perseus"]
+action="extract_items"
+source="https://github.com/rgaudin/standalone-perseus/archive/refs/tags/v1.1.4.zip"
+zip_paths=[
+    "standalone-perseus-1.1.4",
+]
+target_paths=["perseus"]
+remove = ["*.txt","*.md",]
+execute_after=[
+    '''sed -i '1s/""/"assets\/perseus\/"/' perseus/build/frame-perseus.js'''
+]

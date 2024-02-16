@@ -1,5 +1,5 @@
 [build-system]
-requires = ["hatchling", "hatch-openzim"]
+requires = ["hatchling", "hatch-openzim>=0.2"]
 build-backend = "hatchling.build"
 
 [project]
@@ -20,6 +20,9 @@ dynamic = ["authors", "classifiers", "keywords", "license", "version", "urls"]
 [tool.hatch.metadata.hooks.openzim-metadata]
 kind = "scraper"
 additional-keywords = ["kolibri"]
+
+[tool.hatch.build.hooks.openzim-build]
+dependencies = [ "zimscraperlib==3.3.0" ] # required for fix_ogv_dist
 
 [project.optional-dependencies]
 scripts = [
@@ -43,8 +46,6 @@ dev = [
     "kolibri2zim[lint]",
     "kolibri2zim[test]",
     "kolibri2zim[check]",
-    # hatchling is a dev dependency only needed for hook development on developer machine
-    "hatchling==1.18.0",
 ]
 
 [project.scripts]
@@ -55,10 +56,6 @@ path = "src/kolibri2zim/__about__.py"
 
 [tool.hatch.build]
 exclude = ["/.github"]
-
-[tool.hatch.build.hooks.custom]
-path = "hatch_build.py"
-dependencies = ["zimscraperlib==3.3.0"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/kolibri2zim"]
