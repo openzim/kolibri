@@ -5,10 +5,11 @@ import argparse
 import os
 import sys
 
-from kolibri2zim.constants import NAME, SCRAPER, Global, get_logger, set_debug
+from kolibri2zim.constants import NAME, SCRAPER, logger
+from kolibri2zim.scraper import Kolibri2Zim
 
 
-def main():
+def parse_args(raw_args):
     parser = argparse.ArgumentParser(
         prog=NAME,
         description="Scraper to create ZIM files from Kolibri channels",
@@ -36,6 +37,13 @@ def main():
         "--name",
         help="ZIM name. Used as identifier and filename (date will be appended)",
         required=True,
+    )
+
+    parser.add_argument(
+        "--lang",
+        help="ZIM Language, used in metadata (should be a ISO-639-3 language code). "
+        "If unspecified, scraper will use 'eng'",
+        default="eng",
     )
 
     parser.add_argument(
@@ -80,7 +88,8 @@ def main():
     )
 
     parser.add_argument(
-        "--publisher", help="Custom publisher name (ZIM metadata). “OpenZIM” otherwise"
+        "--publisher",
+        help="Custom publisher name (ZIM metadata). “openZIM” otherwise",
     )
 
     parser.add_argument(
@@ -161,11 +170,10 @@ def main():
 
     parser.add_argument(
         "--processes",
-        help="Number of processes to dedicate to media optimizations. "
-        "Defaults to number of available CPU threads visible minus 1 except when run "
-        "inside a container (Docker) where we default to 1 as the detected CPUs are "
-        f"the ones of the host. Default: {Global.nb_available_cpus}",
-        default=Global.nb_available_cpus,
+        help="Number of processes to use to handle video compression. "
+        "Increase when many CPUs are available and video compression is configured to "
+        "use only one CPU. Default: 1",
+        default=1,
         type=int,
     )
 
@@ -202,12 +210,14 @@ def main():
         action="version",
         version=SCRAPER,
     )
+    return parser.parse_args(raw_args)
 
-    args = parser.parse_args()
-    set_debug(args.debug)
-    logger = get_logger()
 
-    from kolibri2zim.scraper import Kolibri2Zim
+def main():
+    args = parse_args(sys.argv[1:])
+    if args.debug:
+        for handler in logger.handlers:
+            handler.setLevel("DEBUG")
 
     try:
         scraper = Kolibri2Zim(**dict(args._get_kwargs()))

@@ -4,13 +4,16 @@
 import base64
 import concurrent.futures as cf
 import datetime
+import functools
 import hashlib
 import io
 import json
+import os
 import shutil
 import tempfile
 import threading
 import zipfile
+from contextlib import contextmanager
 from pathlib import Path
 
 import jinja2
@@ -33,7 +36,7 @@ from zimscraperlib.video.presets import VideoMp4Low, VideoWebmHigh, VideoWebmLow
 from zimscraperlib.zim.creator import Creator
 from zimscraperlib.zim.items import StaticItem
 
-from kolibri2zim.constants import ROOT_DIR, STUDIO_URL, WEB_DEPS, Global, get_logger
+from kolibri2zim.constants import JS_DEPS, ROOT_DIR, STUDIO_URL, logger
 from kolibri2zim.database import KolibriDB
 from kolibri2zim.debug import (
     ON_DISK_THRESHOLD,
@@ -49,7 +52,6 @@ from kolibri2zim.schemas import (
     TopicSubSection,
 )
 
-logger = get_logger()
 options = [
     "debug",
     "name",
@@ -128,6 +130,7 @@ class Kolibri2Zim:
         self.author = go("creator")
         self.publisher = go("publisher")
         self.name = go("name")
+        self.language = go("lang")
 
         # customization
         self.favicon = go("favicon")
@@ -143,7 +146,7 @@ class Kolibri2Zim:
 
         # performances options
         self.nb_threads = int(go("threads") or 1)
-        self.nb_processes = int(go("processes") or Global.nb_available_cpus)
+        self.nb_processes = int(go("processes") or 1)
         self.s3_url_with_credentials = go("s3_url_with_credentials")
         self.s3_storage = None
         self.dedup_html_files = go("dedup_html_files")
@@ -186,9 +189,13 @@ class Kolibri2Zim:
     def populate_nodes_executor(self):
         """Loop on content nodes to create zim entries from kolibri DB"""
 
+        def remove_future(future):
+            self.nodes_futures.remove(future)
+
         def schedule_node(item):
             future = self.nodes_executor.submit(self.add_node, item=item)
-            self.nodes_futures.update({future: item[0]})
+            self.nodes_futures.add(future)
+            future.add_done_callback(remove_future)
 
         # schedule root-id
         schedule_node((self.db.root["id"], self.db.root["kind"]))
@@ -545,43 +552,53 @@ class Kolibri2Zim:
             )
         logger.debug(f"Added video #{node_id} - {node['slug']}")
 
-    def add_video_upon_completion(self, future):
-        """adds the converted video inside this future to the zim
-
-        logs error in case of failure"""
-        if future.cancelled():
-            return
+    @contextmanager
+    def cleanup_future_once_done(self, future):
         try:
-            src_fname, dst_fpath, path = self.videos_futures[future]
-        except KeyError:
-            return
+            yield
+        finally:
+            self.videos_futures.remove(future)
 
-        try:
-            future.result()
-        except Exception as exc:
-            logger.error(f"Error re-encoding {src_fname}: {exc}")
-            logger.exception(exc)
-            return
+    def video_conversion_completed(
+        self, future, src_fname, dest_fpath, path, s3_key, s3_meta
+    ):
+        """Perform needed duty once video conversion has completed
 
-        logger.debug(f"Re-encoded {src_fname} successfuly")
+        - adds the converted video inside this future to the zim
+        - upload converted video to cache if configured
+        - delete converted video
+        """
 
-        kwargs = {
-            "path": path,
-            "filepath": dst_fpath,
-            "mimetype": get_file_mimetype(dst_fpath),
-        }
-        # we shall request s3 upload on the threads pool, only once item has been
-        # added to ZIM so it can be removed altogether
-        if self.s3_storage:
-            kwargs.update({"callback": self.request_s3_upload_and_removal})
+        with self.cleanup_future_once_done(future):
+            if future.cancelled():
+                return
 
-        # simply add the item, autodeleting the file
-        else:
-            kwargs.update({"remove": True})
+            try:
+                future.result()
+            except Exception as exc:
+                logger.error(f"Error re-encoding {src_fname}: {exc}")
+                logger.exception(exc)
+                return
 
-        with self.creator_lock:
-            self.creator.add_item(StaticItem(**kwargs))
-        logger.debug(f"Added {path} from re-encoded file")
+            logger.debug(f"Re-encoded {src_fname} successfuly")
+
+            kwargs = {
+                "path": path,
+                "filepath": dest_fpath,
+                "mimetype": get_file_mimetype(dest_fpath),
+            }
+
+            with self.creator_lock:
+                self.creator.add_item(
+                    StaticItem(**kwargs),
+                    callback=functools.partial(
+                        self.converted_video_added_to_zim,
+                        dest_fpath=dest_fpath,
+                        s3_key=s3_key,
+                        s3_meta=s3_meta,
+                    ),
+                )
+            logger.debug(f"Added {path} from re-encoded file")
 
     def convert_and_add_video_aside(
         self, file_id, src_fpath, src_checksum, dest_fpath, path, preset
@@ -597,29 +614,36 @@ class Kolibri2Zim:
             with_process=False,
             failsafe=False,
         )
-        self.videos_futures.update({future: (src_fpath.name, dest_fpath, path)})
-        self.pending_upload.update(
-            {
-                path: (
-                    dest_fpath,
-                    self.s3_key_for(file_id, preset),
-                    {"checksum": src_checksum, "encoder_version": str(preset.VERSION)},
-                )
-            }
+        self.videos_futures.add(future)
+        future.add_done_callback(
+            functools.partial(
+                self.video_conversion_completed,
+                src_fname=src_fpath.name,
+                dest_fpath=dest_fpath,
+                path=path,
+                s3_key=self.s3_key_for(file_id, preset),
+                s3_meta={
+                    "checksum": src_checksum,
+                    "encoder_version": str(preset.VERSION),
+                },
+            )
         )
-        future.add_done_callback(self.add_video_upon_completion)
 
-    def request_s3_upload_and_removal(self, item):
-        """add file from item to uploads list"""
-        path = item.path
-        del item
-        try:
-            dest_fpath, key, meta = self.pending_upload[path]
-        except KeyError:
-            return
-        # TODO: submit to a thread executor (to create) instead
-        # this is currently called on main-tread.
-        self.upload_to_s3(key, dest_fpath, **meta)
+    def converted_video_added_to_zim(self, dest_fpath, s3_key, s3_meta):
+        """Perform needed duty once video has been added to the ZIM
+
+        - upload converted video to cache if configured
+        - delete converted video
+        """
+
+        if self.s3_storage:
+            # we shall request s3 upload on the threads pool, only once item has been
+            # added to ZIM so it can be removed altogether
+            # TODO: submit to a thread executor (to create) instead
+            # this is currently called on main-tread.
+            self.upload_to_s3(s3_key, dest_fpath, **s3_meta)
+
+        os.unlink(dest_fpath)
 
     def add_audio_node(self, node_id):
         """Add content from this `audio` node to zim
@@ -840,9 +864,11 @@ class Kolibri2Zim:
             if not self.dedup_html_files:
                 with self.creator_lock:
                     self.creator.add_item_for(
-                        path=f"files/{node['slug']}/{ark_member}"
-                        if ark_member != "index.html"
-                        else f"files/{node['slug']}",
+                        path=(
+                            f"files/{node['slug']}/{ark_member}"
+                            if ark_member != "index.html"
+                            else f"files/{node['slug']}"
+                        ),
                         content=zip_ark.open(ark_member).read(),
                         is_front=(ark_member == "index.html"),
                     )
@@ -864,9 +890,11 @@ class Kolibri2Zim:
             # add redirect to the unique sum-based entry for that file's path
             with self.creator_lock:
                 self.creator.add_redirect(
-                    path=f"files/{node['slug']}/{ark_member}"
-                    if ark_member != "index.html"
-                    else f"files/{node['slug']}",
+                    path=(
+                        f"files/{node['slug']}/{ark_member}"
+                        if ark_member != "index.html"
+                        else f"files/{node['slug']}"
+                    ),
                     target_path=f"html5_files/{content_hash}",
                     is_front=ark_member == "index.html",
                 )
@@ -907,6 +935,7 @@ class Kolibri2Zim:
             f"  description: {self.description}\n"
             f"  creator: {self.author}\n"
             f"  publisher: {self.publisher}\n"
+            f"  language: {self.language}\n"
             f"  tags: {';'.join(self.tags)}"
         )
 
@@ -938,8 +967,8 @@ class Kolibri2Zim:
             ignore_duplicates=True,
         )
         self.creator.config_metadata(
-            Name=self.clean_fname,
-            Language="eng",
+            Name=self.name,  # pyright: ignore[reportArgumentType]
+            Language=self.language,  # pyright: ignore[reportArgumentType]
             Title=self.title,
             Description=self.description,
             LongDescription=self.long_description,
@@ -962,12 +991,11 @@ class Kolibri2Zim:
             self.add_local_files("assets", self.templates_dir.joinpath("assets"))
 
             # setup queue for nodes processing
-            self.nodes_futures = {}  # future: node_id
+            self.nodes_futures = set()
             self.nodes_executor = cf.ThreadPoolExecutor(max_workers=self.nb_threads)
 
             # setup a dedicated queue for videos to convert
-            self.videos_futures = {}  # future: src_fname, dst_fpath, path
-            self.pending_upload = {}  # path: filepath, key, checksum
+            self.videos_futures = set()
             self.videos_executor = cf.ProcessPoolExecutor(max_workers=self.nb_processes)
 
             logger.info("Starting nodes processing")
@@ -975,7 +1003,7 @@ class Kolibri2Zim:
 
             # await completion of all futures (nodes and videos)
             result = cf.wait(
-                self.videos_futures.keys() | self.nodes_futures.keys(),
+                self.videos_futures | self.nodes_futures,
                 return_when=cf.FIRST_EXCEPTION,
             )
             self.nodes_executor.shutdown()
@@ -1094,7 +1122,7 @@ class Kolibri2Zim:
         self.author = self.author.strip()
 
         if not self.publisher:
-            self.publisher = "Openzim"
+            self.publisher = "openZIM"
         self.publisher = self.publisher.strip()
 
         self.tags = list({*self.tags, "_category:other", "kolibri", "_videos:yes"})
@@ -1219,7 +1247,7 @@ class Kolibri2Zim:
         logger.debug("Added about page and custom CSS")
 
     def ensure_js_deps_are_present(self):
-        for dep in WEB_DEPS:
+        for dep in JS_DEPS:
             if not self.templates_dir.joinpath(f"assets/{dep}").exists():
                 raise ValueError(
                     "It looks like web deps have not been installed,"

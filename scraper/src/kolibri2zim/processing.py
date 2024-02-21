@@ -3,9 +3,7 @@
 
 from zimscraperlib.video.encoding import reencode
 
-from kolibri2zim.constants import get_logger
-
-logger = get_logger()
+from kolibri2zim.constants import logger
 
 
 def post_process_video(video_dir, video_id, preset, video_format, low_quality):
