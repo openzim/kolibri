@@ -36,6 +36,7 @@ To simplify this, it is possible to:
 - iterate on ZIM UI code
 
 To achieve this, first build the Docker image based on current code base.
+Make sure Docker is running in the background ("Docker Deamon" app for Windows and Mac, or `docker start` in Linux).
 
 ```
 docker build -t local-kolibri2zim .
@@ -44,7 +45,7 @@ docker build -t local-kolibri2zim .
 Scrape a channel (here we use the minimal channel, but you could use any other one of interest for your UI developments).
 
 ```
-docker run --rm -it -v $PWD/output:/output local-kolibri2zim kolibri2zim --name "minimal_test" --title "Minimal Kolibri Channel Test" --description "This is a minimal K
+docker run --rm -it -v "$PWD/output:/output" local-kolibri2zim kolibri2zim --name "minimal_test" --title "Minimal Kolibri Channel Test" --description "This is a minimal K
 olibri Channel, with new Kolibri UI" --channel-id "7f744ce8d28b471eaf663abd60c92267" --zim-file "Minimal_Test.zim"
 ```
 
