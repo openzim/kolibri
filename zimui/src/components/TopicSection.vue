@@ -101,49 +101,65 @@ const getClassSelector = (className: string): string => {
         </div>
       </router-link>
     </div>
-    <div :id="uid" class="carousel slide">
+    <div :id="uid" class="carousel slide subsection-carousel-container" data-bs-wrap="false">
       <button
+        v-if="data.subsections.length >= ($grid.lg ? 4 : $grid.sm ? 2 : 1)"
         class="carousel-control-prev"
         type="button"
         :data-bs-target="getClassSelector(uid)"
         data-bs-slide="prev"
       >
-        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+        <span style="color: black;" aria-hidden="true">
+          <font-awesome-icon :icon="['fas', 'arrow-left']" />
+        </span>
         <span class="visually-hidden">Previous</span>
       </button>
-      <div class="carousel-inner">
-        <div
-          v-for="(chunk, chunkIndex) in splitCardsListIntoChunks(
-            limitCardsPerSections(data.subsections, data.slug),
-            $grid.lg ? 4 : $grid.sm ? 2 : 1,
-          )"
-          :key="chunkIndex"
-          class="carousel-item"
-          :class="{ active: chunkIndex === 0 }"
+      <div class="container">
+        <div 
+          class="carousel-inner"
+          :style="{
+            minWidth:($grid.xxl ? '1168px' : ($grid.xl ? '988px' : ($grid.lg ? '808px' : ($grid.md ? '568px' : '')))),
+            overflow: 'hidden',
+          }"
         >
-          <div class="container">
-            <div class="row">
-              <div
-                v-for="(item, itemIndex) in chunk"
-                :key="chunkIndex + '-' + itemIndex"
-                class="col-sm-6 col-md-6 col-lg-3"
-              >
-                <TopicCard :data="item" />
+          <div
+            v-for="(chunk, chunkIndex) in splitCardsListIntoChunks(
+              limitCardsPerSections(data.subsections, data.slug),
+              $grid.lg ? 4 : $grid.sm ? 2 : 1,
+            )"
+            :key="chunkIndex"
+            class="carousel-item"
+            :class="{ active: chunkIndex === 0 }"
+            style="padding: 0px 10px;"
+          >
+            <div>
+              <div class="row">
+                <div
+                  v-for="(item, itemIndex) in chunk"
+                  :key="chunkIndex + '-' + itemIndex"
+                  class="col-sm-6 col-md-6 col-lg-3"
+                  :style="{ minWidth: $grid.xxl ? '270px' : $grid.xl ? '225px' : $grid.lg ? '180px' : $grid.md ? '267px' : $grid.sm ? '177px' : '100%'}"
+                >
+                  <TopicCard :data="item" />
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
       <button
+        v-if="data.subsections.length >= ($grid.lg ? 4 : $grid.sm ? 2 : 1)"
         class="carousel-control-next"
         type="button"
         :data-bs-target="getClassSelector(uid)"
         data-bs-slide="next"
       >
-        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+        <span style="color: black;" aria-hidden="true">
+          <font-awesome-icon :icon="['fas', 'arrow-right']" />
+        </span>
         <span class="visually-hidden">Next</span>
       </button>
-    </div>
+	  </div>
   </div>
 </template>
 
@@ -162,11 +178,10 @@ const getClassSelector = (className: string): string => {
   width: 50px;
 }
 
-.carousel-control-prev-icon {
-  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23000'%3e%3cpath d='M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z'/%3e%3c/svg%3e");
-}
-
-.carousel-control-next-icon {
-  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23000'%3e%3cpath d='M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z'/%3e%3c/svg%3e");
+.subsection-carousel-container {
+	display: flex;
+	justify-content: center;
+	width: fit-content;
+	margin: 0 auto;
 }
 </style>
