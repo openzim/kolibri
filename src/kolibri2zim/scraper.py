@@ -197,21 +197,24 @@ class Kolibri2Zim:
 
     def add_node(self, item):
         """process a content node from the tuple in queue"""
-        node_id, kind = item
-        # check if we have a handler for this {kind} of node
-        handler = getattr(self, f"add_{kind}_node", None)
+        try:
+            node_id, kind = item
+            # check if we have a handler for this {kind} of node
+            handler = getattr(self, f"add_{kind}_node", None)
 
-        # debug espace
-        if self.only_topics and kind != "topic":
-            return
+            # debug espace
+            if self.only_topics and kind != "topic":
+                return
 
-        if handler:
-            # add thumbnail to zim if there's one for this node
-            thumbnail = self.db.get_node_thumbnail(node_id)
-            if thumbnail:
-                self.funnel_file(thumbnail["id"], thumbnail["ext"])
-            # fire the add_{kind}_node() method which will actually process it
-            handler(node_id)
+            if handler:
+                # add thumbnail to zim if there's one for this node
+                thumbnail = self.db.get_node_thumbnail(node_id)
+                if thumbnail:
+                    self.funnel_file(thumbnail["id"], thumbnail["ext"])
+                # fire the add_{kind}_node() method which will actually process it
+                handler(node_id)
+        except Exception as ex:
+            raise RuntimeError(f"Failed to process {kind} node {node_id}") from ex
 
     def funnel_file(self, fid, fext):
         """directly add a Kolibri file to the ZIM using same name"""
