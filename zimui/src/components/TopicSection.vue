@@ -16,19 +16,19 @@ const uid = ref('carroussel_' + instance?.uid)
 const currentSlide = ref(0)
 
 onMounted(() => {
-  const carouselElement = document.getElementById(uid.value);
+  const carouselElement = document.getElementById(uid.value)
   if (carouselElement) {
-    carouselElement.addEventListener('slid.bs.carousel', updateCurrentSlide);
+    carouselElement.addEventListener('slid.bs.carousel', updateCurrentSlide)
   }
-});
+})
 
 // Method to update currentSlide when the carousel slides
 function updateCurrentSlide() {
-  const activeSlide = document.querySelector(`#${uid.value} .carousel-item.active`);
+  const activeSlide = document.querySelector(`#${uid.value} .carousel-item.active`)
   if (activeSlide instanceof HTMLElement) {
-    const index = activeSlide.getAttribute('data-index');
+    const index = activeSlide.getAttribute('data-index')
     if (index !== null) {
-      currentSlide.value = parseInt(index);
+      currentSlide.value = parseInt(index)
     }
   }
 }
