@@ -883,7 +883,7 @@ class Kolibri2Zim:
             self.videos_executor.shutdown()
 
             nb_done_with_failure = sum(
-                [1 if future.exception() else 0 for future in futures.done]
+                1 if future.exception() else 0 for future in futures.done
             )
             succeeded = not futures.not_done and nb_done_with_failure == 0
 
