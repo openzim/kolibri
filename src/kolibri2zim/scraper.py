@@ -91,6 +91,17 @@ def read_from_zip(ark, member):
     return ark.open(member).read()
 
 
+def wrap_failure_details(func):
+    def wrapper(self, item):
+        try:
+            node_id, kind = item
+            return func(self, item)
+        except Exception as ex:
+            raise RuntimeError(f"Failed to process {kind} node {node_id}") from ex
+
+    return wrapper
+
+
 class Kolibri2Zim:
     def __init__(self, **kwargs):
         for option in options:
@@ -191,26 +202,24 @@ class Kolibri2Zim:
             if self.node_ids is None or node["id"] in self.node_ids:
                 schedule_node((node["id"], node["kind"]))
 
+    @wrap_failure_details
     def add_node(self, item):
         """process a content node from the tuple in queue"""
-        try:
-            node_id, kind = item
-            # check if we have a handler for this {kind} of node
-            handler = getattr(self, f"add_{kind}_node", None)
+        node_id, kind = item
+        # check if we have a handler for this {kind} of node
+        handler = getattr(self, f"add_{kind}_node", None)
 
-            # debug espace
-            if self.only_topics and kind != "topic":
-                return
+        # debug espace
+        if self.only_topics and kind != "topic":
+            return
 
-            if handler:
-                # add thumbnail to zim if there's one for this node
-                thumbnail = self.db.get_node_thumbnail(node_id)
-                if thumbnail:
-                    self.funnel_file(thumbnail["id"], thumbnail["ext"])
-                # fire the add_{kind}_node() method which will actually process it
-                handler(node_id)
-        except Exception as ex:
-            raise RuntimeError(f"Failed to process {kind} node {node_id}") from ex
+        if handler:
+            # add thumbnail to zim if there's one for this node
+            thumbnail = self.db.get_node_thumbnail(node_id)
+            if thumbnail:
+                self.funnel_file(thumbnail["id"], thumbnail["ext"])
+            # fire the add_{kind}_node() method which will actually process it
+            handler(node_id)
 
     def funnel_file(self, fid, fext):
         """directly add a Kolibri file to the ZIM using same name"""
