@@ -4,7 +4,9 @@
 
 * Open issues, bug reports and send PRs [on github](https://github.com/openzim/kolibri2zim).
 * Make sure it's `py3.6+` compatible.
+* Docker (which engine must run in the background).
 * Use [black](https://github.com/psf/black) code formatting.
+* `pre-commit` must be activated before (code must pass all pre-commit checks to succeed in the CI)
 
 ## notes
 
@@ -44,7 +46,7 @@ docker build -t local-kolibri2zim .
 Scrape a channel (here we use the minimal channel, but you could use any other one of interest for your UI developments).
 
 ```
-docker run --rm -it -v $PWD/output:/output local-kolibri2zim kolibri2zim --name "minimal_test" --title "Minimal Kolibri Channel Test" --description "This is a minimal K
+docker run --rm -it -v "$PWD/output":/output local-kolibri2zim kolibri2zim --name "minimal_test" --title "Minimal Kolibri Channel Test" --description "This is a minimal K
 olibri Channel, with new Kolibri UI" --channel-id "7f744ce8d28b471eaf663abd60c92267" --zim-file "Minimal_Test.zim"
 ```
 
