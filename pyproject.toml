@@ -8,7 +8,7 @@ requires-python = ">=3.12,<3.13"
 description = "Make ZIM file from Kolibri Channels"
 readme = "README.md"
 dependencies = [
-    "zimscraperlib==3.3.0",
+    "zimscraperlib==3.3.1",
     "kiwixstorage==0.8.3",
     "Jinja2==3.1.3",
     "pif==0.8.2",
@@ -22,7 +22,7 @@ kind = "scraper"
 additional-keywords = ["kolibri"]
 
 [tool.hatch.build.hooks.openzim-build]
-dependencies = [ "zimscraperlib==3.3.0" ] # required for fix_ogv_dist
+dependencies = [ "zimscraperlib==3.3.1" ] # required for fix_ogv_dist
 
 [project.optional-dependencies]
 scripts = [
