@@ -96,8 +96,8 @@ def wrap_failure_details(func):
         try:
             node_id, kind = item
             return func(self, item)
-        except Exception as ex:
-            raise RuntimeError(f"Failed to process {kind} node {node_id}") from ex
+        except Exception as exc:
+            raise RuntimeError(f"Failed to process {kind} node {node_id}") from exc
 
     return wrapper
 
