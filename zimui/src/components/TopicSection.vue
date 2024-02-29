@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, getCurrentInstance } from 'vue'
+import { ref, getCurrentInstance, onMounted } from 'vue'
 import TopicCard from '../components/TopicCard.vue'
 import TopicSubSection from '@/types/TopicSubSection'
 import TopicCardData from '@/types/TopicCardData'
@@ -13,6 +13,25 @@ defineProps({
 })
 const instance = getCurrentInstance()
 const uid = ref('carroussel_' + instance?.uid)
+const currentSlide = ref(0)
+
+onMounted(() => {
+  const carouselElement = document.getElementById(uid.value)
+  if (carouselElement) {
+    carouselElement.addEventListener('slid.bs.carousel', updateCurrentSlide)
+  }
+})
+
+// Method to update currentSlide when the carousel slides
+function updateCurrentSlide() {
+  const activeSlide = document.querySelector(`#${uid.value} .carousel-item.active`)
+  if (activeSlide instanceof HTMLElement) {
+    const index = activeSlide.getAttribute('data-index')
+    if (index !== null) {
+      currentSlide.value = parseInt(index)
+    }
+  }
+}
 
 /**
  * Keep only the 10 first items of the input array. If more than 10 items
@@ -77,7 +96,7 @@ const getClassSelector = (className: string): string => {
 </script>
 
 <template>
-  <div class="subsection pt-3 pb-3">
+  <div class="subsection container pt-3 pb-3">
     <div class="container pt-3">
       <router-link
         class="text-decoration-none text-reset"
@@ -101,49 +120,59 @@ const getClassSelector = (className: string): string => {
         </div>
       </router-link>
     </div>
-    <div :id="uid" class="carousel slide">
+    <div :id="uid" class="carousel slide subsection-carousel-container" data-bs-wrap="false">
       <button
+        v-if="data.subsections.length >= ($grid.lg ? 4 : $grid.sm ? 2 : 1) && currentSlide!==0"
         class="carousel-control-prev"
         type="button"
         :data-bs-target="getClassSelector(uid)"
         data-bs-slide="prev"
       >
-        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+        <span style="color: black;">
+          <font-awesome-icon :icon="['fas', 'arrow-left']" />
+        </span>
         <span class="visually-hidden">Previous</span>
       </button>
-      <div class="carousel-inner">
-        <div
-          v-for="(chunk, chunkIndex) in splitCardsListIntoChunks(
-            limitCardsPerSections(data.subsections, data.slug),
-            $grid.lg ? 4 : $grid.sm ? 2 : 1,
-          )"
-          :key="chunkIndex"
-          class="carousel-item"
-          :class="{ active: chunkIndex === 0 }"
-        >
-          <div class="container">
-            <div class="row">
-              <div
-                v-for="(item, itemIndex) in chunk"
-                :key="chunkIndex + '-' + itemIndex"
-                class="col-sm-6 col-md-6 col-lg-3"
-              >
-                <TopicCard :data="item" />
+      <div class="container">
+        <div class="carousel-inner">
+          <div
+            v-for="(chunk, chunkIndex) in splitCardsListIntoChunks(
+              limitCardsPerSections(data.subsections, data.slug),
+              $grid.lg ? 4 : $grid.sm ? 2 : 1,
+            )"
+            :key="chunkIndex"
+            class="carousel-item"
+            :class="{ active: chunkIndex === currentSlide }"
+            :data-index="chunkIndex"
+            style="padding: 0px 10px;"
+          >
+            <div>
+              <div class="row">
+                <div
+                  v-for="(item, itemIndex) in chunk"
+                  :key="chunkIndex + '-' + itemIndex"
+                  class="col-sm-6 col-md-6 col-lg-3"
+                >
+                  <TopicCard :data="item" />
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
       <button
+        v-if="data.subsections.length >= ($grid.lg ? 4 : $grid.sm ? 2 : 1) && currentSlide!==splitCardsListIntoChunks(limitCardsPerSections(data.subsections, data.slug), $grid.lg ? 4 : $grid.sm ? 2 : 1).length-1"
         class="carousel-control-next"
         type="button"
         :data-bs-target="getClassSelector(uid)"
         data-bs-slide="next"
       >
-        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+        <span style="color: black;">
+          <font-awesome-icon :icon="['fas', 'arrow-right']" />
+        </span>
         <span class="visually-hidden">Next</span>
       </button>
-    </div>
+	  </div>
   </div>
 </template>
 
@@ -162,11 +191,12 @@ const getClassSelector = (className: string): string => {
   width: 50px;
 }
 
-.carousel-control-prev-icon {
-  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23000'%3e%3cpath d='M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z'/%3e%3c/svg%3e");
+.subsection-carousel-container {
+  position: relative;
 }
 
-.carousel-control-next-icon {
-  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23000'%3e%3cpath d='M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z'/%3e%3c/svg%3e");
+.subsection{
+  padding-left: 0px;
+  padding-right: 0px;
 }
 </style>
