@@ -12,6 +12,9 @@ const topic: Ref<string> = ref(params.value.topic as string)
 // update topic when route params are changed
 watch(params, () => {
   topic.value = params.value.topic as string
+  if (topic.value === undefined && main.channelData != null) {
+    topic.value = main.channelData.rootSlug
+  }
 })
 
 // fetch channel data and set default topic if needed
