@@ -71,6 +71,14 @@ const parentSlug = (): string | null => {
   }
   return topic.value.parents[topic.value.parents.length - 1].slug
 }
+
+/** Navigate to the previous page */
+const goToPreviousPage = () => {
+  // click browser back button 
+  if (window.history.length > 1) {
+    window.history.back()
+  }
+}
 </script>
 
 <template>
@@ -123,18 +131,17 @@ const parentSlug = (): string | null => {
               'col-sm-12': !topic.thumbnail,
             }"
           >
-            <router-link :to="`./${parentSlug()}`">
-              <button
-                v-if="hasParents()"
-                type="button"
-                class="btn back-button rounded-circle btn-secondary light"
-              >
-                <FontAwesomeIcon
-                  aria-label="Arrow Left icon"
-                  icon="fa-solid fa-arrow-left"
-                />
-              </button>
-            </router-link>
+            <button
+              @click="goToPreviousPage"
+              v-if="hasParents()"
+              type="button"
+              class="btn back-button rounded-circle btn-secondary light"
+            >
+              <FontAwesomeIcon
+                aria-label="Arrow Left icon"
+                icon="fa-solid fa-arrow-left"
+              />
+            </button>
             <h1 class="d-md-none h3">{{ topic.title }}</h1>
             <h1 class="d-md-block d-none">{{ topic.title }}</h1>
             <div class="lead mb-2">
