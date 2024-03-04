@@ -17,9 +17,11 @@ const props = defineProps({
 })
 
 const topic = ref<Topic>()
+const dataLoaded = ref(false)
 
 /** Retrieve topic data */
 const fetchData = async function () {
+  dataLoaded.value = false
   if (props.slug == undefined) {
     return
   }
@@ -27,6 +29,7 @@ const fetchData = async function () {
   if (resp) {
     topic.value = resp
   }
+  dataLoaded.value = true
 }
 
 watch(props, fetchData)
@@ -64,17 +67,9 @@ const hasParents = (): boolean => {
   )
 }
 
-/** Return the slug of the last parent in the parents hierarchy */
-const parentSlug = (): string | null => {
-  if (!topic.value || !topic.value.parents || topic.value.parents.length == 0) {
-    return null
-  }
-  return topic.value.parents[topic.value.parents.length - 1].slug
-}
-
 /** Navigate to the previous page */
 const goToPreviousPage = () => {
-  // click browser back button 
+  // click browser back button
   if (window.history.length > 1) {
     window.history.back()
   }
@@ -119,7 +114,11 @@ const goToPreviousPage = () => {
         </ul>
       </div>
     </nav>
-    <div class="jumbotron" :class="{ 'with-description': topic.description }">
+    <div
+      v-if="dataLoaded"
+      class="jumbotron"
+      :class="{ 'with-description': topic.description }"
+    >
       <div class="container">
         <div
           class="align-items-start d-flex justify-content-between mt-5"
@@ -132,10 +131,10 @@ const goToPreviousPage = () => {
             }"
           >
             <button
-              @click="goToPreviousPage"
               v-if="hasParents()"
               type="button"
               class="btn back-button rounded-circle btn-secondary light"
+              @click="goToPreviousPage"
             >
               <FontAwesomeIcon
                 aria-label="Arrow Left icon"
@@ -156,11 +155,13 @@ const goToPreviousPage = () => {
         </div>
       </div>
     </div>
-    <TopicSection
-      v-for="(content, contentIndex) in getTopicSections(topic.sections)"
-      :key="contentIndex"
-      :data="content"
-    />
+    <div v-if="dataLoaded">
+      <TopicSection
+        v-for="(content, contentIndex) in getTopicSections(topic.sections)"
+        :key="contentIndex"
+        :data="content"
+      />
+    </div>
 
     <div v-if="hasTopicAndNonTopicSection(topic.sections)" class="container">
       <div class="row">
