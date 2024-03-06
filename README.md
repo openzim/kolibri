@@ -42,7 +42,7 @@ See `requirements.txt` for the list of python dependencies.
 ## Docker
 
 ```bash
-docker run -v my_dir:/output ghcr.io/openzim/kolibri2zim kolibri2zim --help
+docker run -v my_dir:/output ghcr.io/openzim/kolibri kolibri2zim --help
 ```
 
 Usage
