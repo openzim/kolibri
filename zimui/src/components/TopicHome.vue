@@ -6,6 +6,7 @@ import Topic from '@/types/Topic'
 import { useMainStore } from '../stores/main'
 import TopicSectionType from '@/types/TopicSection'
 import { transformTopicSectionOrSubSectionToCardData } from '@/types/TopicCardData'
+import ToolBar from '../components/ToolBar.vue'
 
 const main = useMainStore()
 
@@ -156,6 +157,7 @@ const goToPreviousPage = () => {
       </div>
     </div>
     <div v-if="dataLoaded">
+      <ToolBar :topic="topic" />
       <TopicSection
         v-for="(content, contentIndex) in getTopicSections(topic.sections)"
         :key="contentIndex"
