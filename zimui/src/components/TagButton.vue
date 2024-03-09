@@ -8,13 +8,25 @@ defineProps({
 </script>
 
 <template>
-  <router-link class="text-decoration-none text-reset" :to="`./${data.slug}`">
+  <div v-if="data.kind == 'topic'">
+    <router-link class="text-decoration-none text-reset" :to="`./${data.slug}`">
+      <div role="group" class="mx-1 my-1 btn-group btn-group-sm">
+        <a class="btn btn-primary btn-sm rounded-pill tagbutton">
+          {{ data.title }}
+        </a>
+      </div>
+    </router-link>
+  </div>
+  <div v-else>
     <div role="group" class="mx-1 my-1 btn-group btn-group-sm">
-      <a class="btn btn-primary btn-sm rounded-pill tagbutton" style="">
+      <a
+        class="btn btn-primary btn-sm rounded-pill tagbutton"
+        :href="`./files/${data.slug}`"
+      >
         {{ data.title }}
       </a>
     </div>
-  </router-link>
+  </div>
 </template>
 
 <style scoped>
