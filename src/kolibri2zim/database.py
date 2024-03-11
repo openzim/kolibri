@@ -4,8 +4,11 @@
 import logging
 import pathlib
 import sqlite3
+import threading
 
 logger = logging.getLogger(__name__)
+
+lock = threading.Lock()
 
 
 def dict_factory(cursor, row):
@@ -62,8 +65,9 @@ class KolibriDB:
         return self.conn
 
     def get_row(self, query, *args, **kwargs):
-        with self.get_conn() as conn:
-            return conn.execute(query, *args, **kwargs).fetchone()
+        with lock:
+            with self.get_conn() as conn:
+                return conn.execute(query, *args, **kwargs).fetchone()
 
     def get_cell(self, query, *args, **kwargs):
         return self.get_row(query, *args, **kwargs)[0]

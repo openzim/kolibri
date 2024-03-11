@@ -7,6 +7,10 @@ from retrying import retry
 from zimscraperlib.download import _get_retry_adapter, stream_file
 from zimscraperlib.video.encoding import reencode
 
+from pathlib import Path
+from typing import Any
+from time import sleep
+
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger("DEBUG")
 
@@ -50,6 +54,30 @@ def download_to(
 
 
 # retry up to three times on subprocess.CalledProcessError
-@retry(stop_max_attempt_number=3)
-def safer_reencode(*args, **kwargs):
-    return reencode(*args, **kwargs)
+# @retry(stop_max_attempt_number=3)
+def safer_reencode(
+    file_id: str,
+    src_path: Path,
+    dst_path: Path,
+    ffmpeg_args: dict[str, str],
+    delete_src: bool,
+    with_process: bool,
+    failsafe: bool,
+):
+    """Retry the reencoding three times and capture stdout/stderr logs in exception"""
+    sleep(2)
+    raise Exception(f"HHHHHHAAAAA {file_id}")
+    success, process = reencode(
+        src_path=src_path,
+        dst_path=dst_path,
+        ffmpeg_args=ffmpeg_args,
+        delete_src=delete_src,
+        with_process=with_process,
+        failsafe=failsafe,
+    )
+    if not success:
+        logger.error(f"HHHHHHAAAAA {file_id}")
+        # logger.error(process.stdout)
+        raise Exception(
+            f"Exception while re-encoding {src_path} for {file_id}\n{process.stdout}"
+        )

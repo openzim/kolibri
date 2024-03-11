@@ -13,8 +13,8 @@ import shutil
 import tempfile
 import threading
 import zipfile
-from contextlib import contextmanager
 from pathlib import Path
+from time import sleep
 
 import jinja2
 from bs4 import BeautifulSoup
@@ -73,6 +73,9 @@ options = [
     "node_ids",
 ]
 NOSTREAM_FUNNEL_SIZE = 1024  # 2**20 * 2  # 2MiB
+
+# update the list of futures and report status every ... seconds
+UPDATE_FUTURES_EVERY_SECONDS = 1
 
 
 def filename_for(file):
@@ -457,15 +460,8 @@ class Kolibri2Zim:
             )
         logger.debug(f"Added video #{node_id}")
 
-    @contextmanager
-    def cleanup_future_once_done(self, future):
-        try:
-            yield
-        finally:
-            self.videos_futures.remove(future)
-
     def video_conversion_completed(
-        self, future, src_fname, dest_fpath, path, s3_key, s3_meta
+        self, future, file_id, src_fname, dest_fpath, path, s3_key, s3_meta
     ):
         """Perform needed duty once video conversion has completed
 
@@ -474,36 +470,29 @@ class Kolibri2Zim:
         - delete converted video
         """
 
-        with self.cleanup_future_once_done(future):
-            if future.cancelled():
-                return
+        if future.cancelled() or future.exception():
+            logger.debug(f"CANCELLED {file_id}")
+            return
 
-            try:
-                future.result()
-            except Exception as exc:
-                logger.error(f"Error re-encoding {src_fname}: {exc}")
-                logger.exception(exc)
-                return
+        logger.debug(f"Re-encoded {src_fname} successfuly")
 
-            logger.debug(f"Re-encoded {src_fname} successfuly")
+        kwargs = {
+            "path": path,
+            "filepath": dest_fpath,
+            "mimetype": get_file_mimetype(dest_fpath),
+        }
 
-            kwargs = {
-                "path": path,
-                "filepath": dest_fpath,
-                "mimetype": get_file_mimetype(dest_fpath),
-            }
-
-            with self.creator_lock:
-                self.creator.add_item(
-                    StaticItem(**kwargs),
-                    callback=functools.partial(
-                        self.converted_video_added_to_zim,
-                        dest_fpath=dest_fpath,
-                        s3_key=s3_key,
-                        s3_meta=s3_meta,
-                    ),
-                )
-            logger.debug(f"Added {path} from re-encoded file")
+        with self.creator_lock:
+            self.creator.add_item(
+                StaticItem(**kwargs),
+                callback=functools.partial(
+                    self.converted_video_added_to_zim,
+                    dest_fpath=dest_fpath,
+                    s3_key=s3_key,
+                    s3_meta=s3_meta,
+                ),
+            )
+        logger.debug(f"Added {path} from re-encoded file")
 
     def convert_and_add_video_aside(
         self, file_id, src_fpath, src_checksum, dest_fpath, path, preset
@@ -512,17 +501,19 @@ class Kolibri2Zim:
 
         future = self.videos_executor.submit(
             safer_reencode,
+            file_id=file_id,
             src_path=src_fpath,
             dst_path=dest_fpath,
             ffmpeg_args=preset.to_ffmpeg_args(),
             delete_src=True,
-            with_process=False,
-            failsafe=False,
+            with_process=True,
+            failsafe=True,
         )
         self.videos_futures.add(future)
         future.add_done_callback(
             functools.partial(
                 self.video_conversion_completed,
+                file_id=file_id,
                 src_fname=src_fpath.name,
                 dest_fpath=dest_fpath,
                 path=path,
@@ -782,6 +773,28 @@ class Kolibri2Zim:
 
         logger.debug(f"Added HTML5 node #{node_id}")
 
+    def report_futures_status(self):
+
+        for future in self.nodes_futures:
+            if future.cancelled():
+                pass
+
+        nb_nodes = len(self.nodes_futures)
+        nb_nodes_done = sum(1 if future.done() else 0 for future in self.nodes_futures)
+        nb_nodes_not_done = nb_nodes - nb_nodes_done
+
+        nb_videos = len(self.videos_futures)
+        nb_videos_done = sum(
+            1 if future.done() else 0 for future in self.videos_futures
+        )
+        nb_videos_not_done = nb_videos - nb_videos_done
+
+        logger.debug(
+            f"Processing {nb_nodes} nodes ({nb_nodes_done} done, {nb_nodes_not_done} to"
+            f" do) and {nb_videos} videos ({nb_videos_done} done, {nb_videos_not_done} "
+            "to do)"
+        )
+
     def run(self):
         if self.s3_url_with_credentials and not self.s3_credentials_ok():
             raise ValueError("Unable to connect to Optimization Cache. Check its URL.")
@@ -860,7 +873,6 @@ class Kolibri2Zim:
         )
         self.creator.start()
 
-        succeeded = False
         try:
             self.add_favicon()
             self.add_custom_about_and_css()
@@ -870,63 +882,83 @@ class Kolibri2Zim:
             self.add_local_files("assets", self.templates_dir.joinpath("assets"))
 
             # setup queue for nodes processing
-            self.nodes_futures = set()
-            self.nodes_executor = cf.ThreadPoolExecutor(max_workers=self.nb_threads)
+            self.nodes_futures: set[cf.Future] = set()
+            self.nodes_executor = cf.ProcessPoolExecutor(max_workers=self.nb_threads)
 
             # setup a dedicated queue for videos to convert
-            self.videos_futures = set()
+            self.videos_futures: set[cf.Future] = set()
             self.videos_executor = cf.ProcessPoolExecutor(max_workers=self.nb_processes)
 
             logger.info("Starting nodes processing")
             self.populate_nodes_executor()
 
-            # await completion of all futures (nodes and videos)
-            futures = cf.wait(
-                self.videos_futures | self.nodes_futures,
-                return_when=cf.FIRST_EXCEPTION,
-            )
-            self.nodes_executor.shutdown()
+            # await completion of nodes futures (videos futures might not be all created
+            # yet since all nodes did not completed, so we timeout every 60 secs to
+            # update the list of futures and catch as many Exception as possible)
+            while True:
+                logger.debug("Waiting1")
+                logger.debug(f"nb processes: {self.nb_processes}")
+                sleep(UPDATE_FUTURES_EVERY_SECONDS)
+                logger.debug("Waiting2")
+                self.report_futures_status()
+                if any(
+                    True if future.exception() else False
+                    for future in self.videos_futures | self.nodes_futures
+                ):
+                    logger.debug("Exiting due to future exception")
+                    break
+                if (
+                    sum(
+                        0 if future.done() else 1
+                        for future in self.videos_futures | self.nodes_futures
+                    )
+                    == 0
+                ):
+                    logger.debug("All futures have completed")
+                    break
+
+            # for future in self.videos_futures | self.nodes_futures:
+            #     if future.cancel():
+            #         logger.debug("Future cancelled")
+
+            logger.debug("Shutdown")
+            self.nodes_executor.shutdown(cancel_futures=True)
             # properly shutting down the executor should allow processing
             # futures's callbacks (zim addition) as the wait() function
             # only awaits future completion and doesn't include callbacks
-            self.videos_executor.shutdown()
+            logger.debug("Shutdown")
+            self.videos_executor.shutdown(cancel_futures=True)
+            logger.debug("Shutdown done")
 
-            nb_done_with_failure = sum(
-                1 if future.exception() else 0 for future in futures.done
-            )
-            succeeded = not futures.not_done and nb_done_with_failure == 0
-
-            if not succeeded:
-                logger.warning(
-                    f"FAILURE: not_done={len(futures.not_done)}, "
-                    f"done successfully={len(futures.done) - nb_done_with_failure}, "
-                    f"done with failure={nb_done_with_failure}"
-                )
-                for future in [fut for fut in futures.done if fut.exception()]:
-                    logger.warning("", exc_info=future.exception())
-                raise Exception("Some nodes have not been processed successfully")
+            if any(
+                True if not future.done() or future.exception() else False
+                for future in self.videos_futures | self.nodes_futures
+            ):
+                self.creator.can_finish = False
+                for future in [
+                    fut
+                    for fut in self.videos_futures | self.nodes_futures
+                    if fut.exception()
+                ]:
+                    logger.warning(f"Exception occurred:", exc_info=future.exception())
         except KeyboardInterrupt:
             self.creator.can_finish = False
             logger.error("KeyboardInterrupt, exiting.")
         except Exception as exc:
             # request Creator not to create a ZIM file on finish
             self.creator.can_finish = False
-            logger.error(f"Interrupting process due to error: {exc}")
-            logger.exception(exc)
+            logger.error(f"Interrupting process due to error", exc_info=exc)
         finally:
-            if succeeded:
-                logger.info("Finishing ZIM file…")
             # we need to release libzim's resources.
-            # currently does nothing but crash if can_finish=False but that's awaiting
-            # impl. at libkiwix level
             with self.creator_lock:
+                logger.info("Finishing ZIM creator…")
                 self.creator.finish()
 
         if not self.keep_build_dir:
             logger.info("Removing build folder")
             shutil.rmtree(self.build_dir, ignore_errors=True)
 
-        return 0 if succeeded else 1
+        return 0 if self.creator.can_finish else 1
 
     def s3_credentials_ok(self):
         logger.info("testing S3 Optimization Cache credentials")
