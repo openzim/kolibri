@@ -10,3 +10,10 @@
   margin-right: auto;
   margin-left: auto;
 }
+.tooltip {
+  opacity: 1;
+}
+.tooltip .tooltip-inner {
+  background-color: white;
+  color: black;
+}
