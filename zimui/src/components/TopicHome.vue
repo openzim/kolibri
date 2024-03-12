@@ -158,7 +158,7 @@ const goToPreviousPage = () => {
     </div>
     <div v-if="dataLoaded">
       <ToolBar
-        v-if="topic.parents.length == 0"
+        v-if="getTopicSections(topic.sections).length > 0"
         :sections="getTopicSections(topic.sections)"
       />
       <TopicSection
