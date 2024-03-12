@@ -23,6 +23,9 @@ app.use(VueScreen, 'bootstrap5')
 const router = createRouter({
   history: createWebHashHistory(),
   routes: routes,
+  scrollBehavior() {
+    return { top: 0, behavior: 'smooth' }
+  },
 })
 
 app.use(router)
