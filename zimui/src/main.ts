@@ -11,6 +11,8 @@ import { faArrowLeft, faArrowRight } from '@fortawesome/free-solid-svg-icons'
 import './style.css'
 import VueScreen from 'vue-screen'
 import { createPinia } from 'pinia'
+import { LoadingPlugin } from 'vue-loading-overlay'
+import 'vue-loading-overlay/dist/css/index.css'
 
 library.add(faFolderOpen, faArrowLeft, faArrowRight, faFileLines)
 
@@ -18,7 +20,7 @@ const app = createApp(App)
 
 app.component('FontAwesomeIcon', FontAwesomeIcon)
 
-app.use(VueScreen, 'bootstrap5')
+app.use(VueScreen, 'bootstrap5', LoadingPlugin)
 
 const router = createRouter({
   history: createWebHashHistory(),
