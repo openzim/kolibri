@@ -7,6 +7,7 @@ import { useMainStore } from '../stores/main'
 import TopicSectionType from '@/types/TopicSection'
 import { transformTopicSectionOrSubSectionToCardData } from '@/types/TopicCardData'
 import ToolBar from '../components/ToolBar.vue'
+import { useLoading } from 'vue-loading-overlay'
 
 const main = useMainStore()
 
@@ -19,18 +20,27 @@ const props = defineProps({
 
 const topic = ref<Topic>()
 const dataLoaded = ref(false)
+const $loading = useLoading()
 
 /** Retrieve topic data */
 const fetchData = async function () {
+  const loader = $loading.show({
+    loader: 'dots',
+  })
   dataLoaded.value = false
   if (props.slug == undefined) {
+    loader.hide()
     return
   }
-  const resp = await main.fetchTopic(props.slug)
-  if (resp) {
-    topic.value = resp
+  try {
+    const resp = await main.fetchTopic(props.slug)
+    if (resp) {
+      topic.value = resp
+    }
+  } finally {
+    loader.hide()
+    dataLoaded.value = true
   }
-  dataLoaded.value = true
 }
 
 watch(props, fetchData)
