@@ -50,7 +50,7 @@ kolibri2zim --name "Biblioteca Elejandria" --output /output --tmp-dir /tmp --zim
 ### Docker
 
 ```bash
-docker run -v my_dir:/output ghcr.io/openzim/kolibri2zim kolibri2zim --help
+docker run -v my_dir:/output ghcr.io/openzim/kolibri kolibri2zim --help
 ```
 
 Usage
@@ -95,7 +95,7 @@ hatch run kolibri2zim --name "Biblioteca Elejandria" --output output --zim-file 
 Run from official version (published on GHCR.io) ; ZIM will be available in the `output` sub-folder of current working directory.
 
 ```
-docker run --rm -it -v $(pwd)/output:/output ghcr.io/openzim/kolibri2zim:latest
+docker run --rm -it -v $(pwd)/output:/output ghcr.io/openzim/kolibri:latest
 kolibri2zim --name "Biblioteca Elejandria" --output /output --tmp-dir /tmp --zim-file Biblioteca_Elejandria.zim --channel-id "fed29d60e4d84a1e8dcfc781d920b40e" --node-ids 'd92c07655128458f8248416154b18a68,89fe2f86ee3f4fbaa7fb2bf9bd56d088,75f99e6b97d14b14a4e74762ad77391f,89fe2f86ee3f4fbaa7fb2bf9bd56d088'
 ```
 
