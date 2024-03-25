@@ -4,7 +4,7 @@ Docker
 
 - Clone the kolibri2zim repository to your local machine
 
-- run the following command with the channel id and `name-of-the-zim` you are converting to to .zim, `channel-id` is a 32-characters long ID that you can find in the URL of the channel you want, either from [Kolibri Studio](https://studio.learningequality.org) or the [Kolibri Catalog](https://kolibri-catalog-en.learningequality.org)
+- run the following command with the channel id and `name-of-the-zim` you are converting to .zim, `channel-id` is a 32-characters long ID that you can find in the URL of the channel you want, either from [Kolibri Studio](https://studio.learningequality.org) or the [Kolibri Catalog](https://kolibri-catalog-en.learningequality.org)
 
 ```bash
 docker run -v my_dir:/output ghcr.io/openzim/kolibri kolibri2zim --channel-id `channel-id` --name `name-of-the-channel`
@@ -12,9 +12,9 @@ docker run -v my_dir:/output ghcr.io/openzim/kolibri kolibri2zim --channel-id `c
 
 - This will create a `.zim` file in the `/output` file, which will be persisted in the my_dir Docker volume.
 
--For getting this .zim file on to your local machine you can save it to your desktop by using `save` command(right click on mouse).
+-For getting this .zim file on to your local machine you can save it to your desktop by using `save` command.
 
-- For opening this `.zim` file, you need a ZIM reader,you could use a Kiwix one and you might use [kiwix-serve](https://kiwix.org/en/applications/).
+- For opening this `.zim` file, you need a ZIM reader, you could use a Kiwix one and you might use [kiwix-serve](https://kiwix.org/en/applications/).
 
 - now you can access that created `.zim` file from the `kiwix-serve ui` and start the server on the localhost.
 
