@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, toRef, Ref, ref, watch } from 'vue'
+import { onMounted, toRef, Ref, ref, watch, computed } from 'vue'
 import { RouteParams, useRoute } from 'vue-router'
 
 import { useMainStore } from '../stores/main'
@@ -17,11 +17,18 @@ watch(params, () => {
   }
 })
 
+const errMessage = computed(() => main.errorMessage)
+
 // fetch channel data and set default topic if needed
 onMounted(async () => {
-  await main.fetchChannel()
-  if (topic.value === undefined && main.channelData != null) {
-    topic.value = main.channelData.rootSlug
+  try {
+    await main.fetchChannel()
+    if (topic.value === undefined && main.channelData != null) {
+      topic.value = main.channelData.rootSlug
+    }
+  } catch (error) {
+    console.error('Error fetching channel data:', error)
+    // Handle error here, for example, show an error message to the user
   }
 })
 
@@ -29,11 +36,22 @@ import TopicHome from '../components/TopicHome.vue'
 </script>
 
 <template>
-  <div class="d-flex flex-column h-100">
+  <div>
+    <div v-if="errMessage" class="error-message">
+      {{ errMessage }}
+    </div>
+ 
+    <div v-else class="d-flex flex-column h-100">
     <div class="flex-fill flex-shrink-0">
       <TopicHome v-if="main.channelData" :slug="topic" />
+    </div>
     </div>
   </div>
 </template>
 
-<style scoped></style>
+<style scoped>
+.error-message {
+  color: red;
+  margin-top: 10px;
+}
+</style>

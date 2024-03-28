@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import TopicSection from '../components/TopicSection.vue'
 import TopicCard from '../components/TopicCard.vue'
-import { onMounted, ref, watch } from 'vue'
+import { onMounted, ref, watch, computed } from 'vue'
 import Topic from '@/types/Topic'
 import { useMainStore } from '../stores/main'
 import TopicSectionType from '@/types/TopicSection'
@@ -22,6 +22,9 @@ const topic = ref<Topic>()
 const dataLoaded = ref(false)
 const $loading = useLoading()
 
+const errMessage = computed(() => main.errorMessage)
+
+
 /** Retrieve topic data */
 const fetchData = async function () {
   const loader = $loading.show({
@@ -37,7 +40,9 @@ const fetchData = async function () {
     if (resp) {
       topic.value = resp
     }
-  } finally {
+  } catch (error) {
+    console.error('Error fetching topic:', error)
+  }finally {
     loader.hide()
     dataLoaded.value = true
   }
@@ -88,6 +93,11 @@ const goToPreviousPage = () => {
 </script>
 
 <template>
+<div>
+    <div v-if="errMessage" class="error-message" >
+      Error: {{ errMessage }}
+    </div>
+  <div v-else>
   <div v-if="topic" class="content">
     <nav
       class="navbar navbar px-0 channel-navbar navbar-light fixed-top navbar-expand shadow"
@@ -205,6 +215,8 @@ const goToPreviousPage = () => {
       </div>
     </div>
   </div>
+  </div>
+</div>
 </template>
 
 <style scoped>
@@ -272,4 +284,10 @@ const goToPreviousPage = () => {
 footer {
   text-align: center;
 }
+
+.error-message {
+  color: red;
+  margin-top: 10px;
+}
+
 </style>
