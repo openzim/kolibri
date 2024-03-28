@@ -37,7 +37,9 @@ const fetchData = async function () {
     if (resp) {
       topic.value = resp
     }
-  } finally {
+  } catch (error) {
+    main.setErrorMessage('An error occured, Please try again.')
+  }finally {
     loader.hide()
     dataLoaded.value = true
   }
