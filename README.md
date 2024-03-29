@@ -30,7 +30,7 @@ virtual environment to avoid installing software dependencies on your system.
 
 ```bash
 python3 -m venv env      # Create virtualenv
-source env/bin/Activate  # Activate the virtualenv
+source env/bin/Activate  # Activate the virtualenv ('env/Scripts/Activate' in Windows)
 pip3 install kolibri2zim # Install dependencies
 kolibri2zim --help       # Display kolibri2zim help
 ```
