@@ -191,15 +191,16 @@ const goToPreviousPage = () => {
         <div
           v-for="(content, contentIndex) in getNonTopicSections(topic.sections)"
           :key="contentIndex"
-          class="col-sm-6 col-md-6 col-lg-3 pt-3 pb-3"
+          class="col-sm-6 col-md-6 col-lg-3 mt-5 " 
         >
           <TopicCard
             :data="transformTopicSectionOrSubSectionToCardData(content)"
+            class="w-100"
           />
         </div>
       </div>
       <div class="row">
-        <footer class="pt-2 pb-3">
+        <footer class="mt-2 mb-1">
           <a href="./files/about">About this content</a>
         </footer>
       </div>

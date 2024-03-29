@@ -23,7 +23,7 @@ defineProps({
             There are {{ data.count_more }} more items in this section.
           </p>
         </div>
-        <p class="card-text">
+        <p class="card-text badge-wrapper">
           <span class="badge rounded-pill badge-primary">
             <FontAwesomeIcon icon="fa-regular fa-folder-open" />
             &nbsp;MORE
@@ -54,7 +54,7 @@ defineProps({
             {{ data.description }}
           </span>
         </div>
-        <p class="card-text">
+        <p class="card-text badge-wrapper">
           <span class="badge rounded-pill badge-primary">
             <FontAwesomeIcon icon="fa-regular fa-folder-open" />
             &nbsp;EXPLORE
@@ -85,7 +85,7 @@ defineProps({
             {{ data.description }}
           </span>
         </div>
-        <p class="card-text">
+        <p class="card-text badge-wrapper">
           <span class="badge rounded-pill badge-primary">
             <FontAwesomeIcon icon="fa-regular fa-file-lines" />
             &nbsp;OPEN
@@ -101,12 +101,19 @@ defineProps({
   background-color: #091415;
   border-radius: 1rem;
   color: white;
+  height: 100%;
+  overflow: hidden;
   top: 50%;
   transform: translateY(-50%);
 }
 
+.card-body{
+  padding: 15px 15px 30px 15px;
+}
+
 .card-img-top {
   border-radius: 1rem 1rem 0 0;
+  width: 100%; 
 }
 
 .badge {
@@ -119,12 +126,19 @@ defineProps({
   border-style: solid;
 }
 
+.badge-wrapper {
+  position: absolute;
+  bottom: 15px; 
+  left: 10px;
+}
+
 .more .card-content {
   height: calc(6rem - 2px);
 }
 
 .with-description .card-content {
   height: calc(9rem - 2px);
+  flex: 1 1 auto;
 }
 
 .card-content {
@@ -148,5 +162,11 @@ defineProps({
   overflow: hidden;
   -webkit-line-clamp: 1;
   -webkit-box-orient: vertical;
+}
+
+.text-decoration-none{
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 </style>
