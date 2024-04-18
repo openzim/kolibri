@@ -37,6 +37,8 @@ const fetchData = async function () {
     if (resp) {
       topic.value = resp
     }
+  } catch (error) {
+    main.setErrorMessage('An unexpected error occured.')
   } finally {
     loader.hide()
     dataLoaded.value = true
@@ -191,7 +193,7 @@ const goToPreviousPage = () => {
         <div
           v-for="(content, contentIndex) in getNonTopicSections(topic.sections)"
           :key="contentIndex"
-          class="col-sm-6 col-md-6 col-lg-3 mt-5 " 
+          class="col-sm-6 col-md-6 col-lg-3 mt-5"
         >
           <TopicCard
             :data="transformTopicSectionOrSubSectionToCardData(content)"

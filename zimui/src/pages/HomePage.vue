@@ -19,17 +19,25 @@ watch(params, () => {
 
 // fetch channel data and set default topic if needed
 onMounted(async () => {
-  await main.fetchChannel()
-  if (topic.value === undefined && main.channelData != null) {
-    topic.value = main.channelData.rootSlug
+  try {
+    await main.fetchChannel()
+    if (topic.value === undefined && main.channelData != null) {
+      topic.value = main.channelData.rootSlug
+    }
+  } catch (error) {
+    main.setErrorMessage('An unexpected error occured.')
   }
 })
 
 import TopicHome from '../components/TopicHome.vue'
+import ErrorDisplay from '@/components/ErrorDisplay.vue'
 </script>
 
 <template>
-  <div class="d-flex flex-column h-100">
+  <div v-if="main.errorMessage">
+    <ErrorDisplay />
+  </div>
+  <div v-else class="d-flex flex-column h-100">
     <div class="flex-fill flex-shrink-0">
       <TopicHome v-if="main.channelData" :slug="topic" />
     </div>
