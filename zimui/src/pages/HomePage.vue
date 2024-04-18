@@ -25,7 +25,7 @@ onMounted(async () => {
       topic.value = main.channelData.rootSlug
     }
   } catch (error) {
-    main.setErrorMessage('An error occured, Please try again.')
+    main.setErrorMessage('An unexpected error occured.')
   }
 })
 
