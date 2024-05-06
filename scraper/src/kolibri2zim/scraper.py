@@ -21,17 +21,11 @@ from bs4 import BeautifulSoup
 from kiwixstorage import KiwixStorage
 from pif import get_public_ip
 from slugify import slugify
-from zimscraperlib.constants import (
-    MAXIMUM_DESCRIPTION_METADATA_LENGTH as MAX_DESC_LENGTH,
-)
-from zimscraperlib.constants import (
-    MAXIMUM_LONG_DESCRIPTION_METADATA_LENGTH as MAX_LONG_DESC_LENGTH,
-)
 from zimscraperlib.filesystem import get_file_mimetype
 from zimscraperlib.i18n import find_language_names
 from zimscraperlib.image.convertion import convert_image, create_favicon
 from zimscraperlib.image.transformation import resize_image
-from zimscraperlib.inputs import handle_user_provided_file
+from zimscraperlib.inputs import compute_descriptions, handle_user_provided_file
 from zimscraperlib.video.presets import VideoMp4Low, VideoWebmHigh, VideoWebmLow
 from zimscraperlib.zim.creator import Creator
 from zimscraperlib.zim.items import StaticItem
@@ -1107,26 +1101,11 @@ class Kolibri2Zim:
         if not self.title:
             self.title = channel_meta["name"]
         self.title = self.title.strip()
-
-        if self.description and len(self.description) > MAX_DESC_LENGTH:
-            raise ValueError(
-                f"Description too long ({len(self.description)}>{MAX_DESC_LENGTH})"
-            )
-        if self.long_description and len(self.long_description) > MAX_LONG_DESC_LENGTH:
-            raise ValueError(
-                f"LongDescription too long ({len(self.long_description)}"
-                f">{MAX_LONG_DESC_LENGTH})"
-            )
-
-        kolibri_desc = channel_meta["description"].strip()
-        if not self.long_description and len(kolibri_desc) > MAX_DESC_LENGTH:
-            self.long_description = kolibri_desc[0:MAX_LONG_DESC_LENGTH]
-            if len(kolibri_desc) > MAX_LONG_DESC_LENGTH:
-                self.long_description = self.long_description[:-1] + "…"
-        if not self.description:
-            self.description = kolibri_desc[0:MAX_DESC_LENGTH]
-            if len(kolibri_desc) > MAX_DESC_LENGTH:
-                self.description = self.description[:-1] + "…"
+        (self.description, self.long_description) = compute_descriptions(
+            channel_meta["description"].strip(),
+            self.description,
+            self.long_description,
+        )
 
         if not self.author:
             self.author = channel_meta["author"] or "Kolibri"
