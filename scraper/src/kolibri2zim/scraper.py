@@ -549,7 +549,7 @@ class Kolibri2Zim:
         )
         with self.creator_lock:
             self.creator.add_item_for(
-                path=f"files/{node['slug']}",
+                path=f"files/{node['slug']}/",
                 title=node["title"],
                 content=html,
                 mimetype="text/html",
@@ -670,7 +670,7 @@ class Kolibri2Zim:
         )
         with self.creator_lock:
             self.creator.add_item_for(
-                path=f"files/{node['slug']}",
+                path=f"files/{node['slug']}/",
                 title=node["title"],
                 content=html,
                 mimetype="text/html",
@@ -749,7 +749,7 @@ class Kolibri2Zim:
         )
         with self.creator_lock:
             self.creator.add_item_for(
-                path=f"files/{node['slug']}",
+                path=f"files/{node['slug']}/",
                 title=node["title"],
                 content=html,
                 mimetype="text/html",
@@ -829,7 +829,7 @@ class Kolibri2Zim:
                 **node,
             )
             with self.creator_lock:
-                path = f"files/{node['slug']}"
+                path = f"files/{node['slug']}/"
                 if is_alt:
                     path += "_alt"
                 self.creator.add_item_for(
@@ -872,7 +872,7 @@ class Kolibri2Zim:
                         path=(
                             f"files/{node['slug']}/{ark_member}"
                             if ark_member != "index.html"
-                            else f"files/{node['slug']}"
+                            else f"files/{node['slug']}/"
                         ),
                         content=zip_ark.open(ark_member).read(),
                         is_front=(ark_member == "index.html"),
@@ -898,7 +898,7 @@ class Kolibri2Zim:
                     path=(
                         f"files/{node['slug']}/{ark_member}"
                         if ark_member != "index.html"
-                        else f"files/{node['slug']}"
+                        else f"files/{node['slug']}/"
                     ),
                     target_path=f"html5_files/{content_hash}",
                     is_front=ark_member == "index.html",

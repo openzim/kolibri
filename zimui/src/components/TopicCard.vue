@@ -65,7 +65,7 @@ defineProps({
   </div>
 
   <div v-else class="card">
-    <a class="text-decoration-none text-reset" :href="`./files/${data.slug}`">
+    <a class="text-decoration-none text-reset" :href="`./files/${data.slug}/`">
       <img
         v-if="data.thumbnail"
         class="card-img-top"
@@ -107,13 +107,13 @@ defineProps({
   transform: translateY(-50%);
 }
 
-.card-body{
+.card-body {
   padding: 15px 15px 30px 15px;
 }
 
 .card-img-top {
   border-radius: 1rem 1rem 0 0;
-  width: 100%; 
+  width: 100%;
 }
 
 .badge {
@@ -128,7 +128,7 @@ defineProps({
 
 .badge-wrapper {
   position: absolute;
-  bottom: 15px; 
+  bottom: 15px;
   left: 10px;
 }
 
@@ -164,7 +164,7 @@ defineProps({
   -webkit-box-orient: vertical;
 }
 
-.text-decoration-none{
+.text-decoration-none {
   display: flex;
   flex-direction: column;
   height: 100%;
