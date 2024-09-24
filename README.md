@@ -8,7 +8,7 @@ kolibri2zim
 
 `kolibr2zim` allows you to create a [ZIM file](https://openzim.org) from a Kolibri Channel.
 
-It downloads the video (`webm` or `mp4` extension – optionnaly
+It downloads the video (`webm` or `mp4` extension – optionally
 recompress them in lower-quality, smaller size), the thumbnails, the
 subtitles and the authors' profile pictures ; then, it create a static
 HTML files folder of it before creating a ZIM off of it.
@@ -32,7 +32,7 @@ virtual environment to avoid installing software dependencies on your system.
 
 ```bash
 python3 -m venv env      # Create virtualenv
-source env/bin/activate  # Activate the virtualenv
+source env/bin/Activate  # Activate the virtualenv ('env/Scripts/Activate' in Windows)
 pip3 install kolibri2zim # Install dependencies
 kolibri2zim --help       # Display kolibri2zim help
 ```
@@ -95,8 +95,7 @@ hatch run kolibri2zim --name "Biblioteca Elejandria" --output output --zim-file 
 Run from official version (published on GHCR.io) ; ZIM will be available in the `output` sub-folder of current working directory.
 
 ```
-docker run --rm -it -v $(pwd)/output:/output ghcr.io/openzim/kolibri:latest
-kolibri2zim --name "Biblioteca Elejandria" --output /output --tmp-dir /tmp --zim-file Biblioteca_Elejandria.zim --channel-id "fed29d60e4d84a1e8dcfc781d920b40e" --node-ids 'd92c07655128458f8248416154b18a68,89fe2f86ee3f4fbaa7fb2bf9bd56d088,75f99e6b97d14b14a4e74762ad77391f,89fe2f86ee3f4fbaa7fb2bf9bd56d088'
+docker run --rm -it -v $(pwd)/output:/output ghcr.io/openzim/kolibri:latest kolibri2zim --name "Biblioteca Elejandria" --output /output --tmp-dir /tmp --zim-file Biblioteca_Elejandria.zim --channel-id "fed29d60e4d84a1e8dcfc781d920b40e" --node-ids 'd92c07655128458f8248416154b18a68,89fe2f86ee3f4fbaa7fb2bf9bd56d088,75f99e6b97d14b14a4e74762ad77391f,89fe2f86ee3f4fbaa7fb2bf9bd56d088'
 ```
 
 License
