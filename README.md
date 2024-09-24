@@ -13,6 +13,11 @@ recompress them in lower-quality, smaller size), the thumbnails, the
 subtitles and the authors' profile pictures ; then, it create a static
 HTML files folder of it before creating a ZIM off of it.
 
+> [!WARNING]
+> This scraper is under heavy modifications to prepare a v2 including a brand new UI for navigating the tree of content and a move to Vue.JS. These changes
+are already merged into `main` branch but not yet completed. Should you be interested in a stable version, please used published versions (PyPI or Docker).
+We also have a `v1` branch for any urgent patch needed to current production version.
+
 Requirements
 ------------
 
