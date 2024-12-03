@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Enhance contribution guidelines: Refactored shell scripts, added additional steps. (#91)
 
+### Changed
+- Updated the error display to a modern UI. (#131)
+
 ## [1.2.1] - 2024-02-29
 
 ### Changed
