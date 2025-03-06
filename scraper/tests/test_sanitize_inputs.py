@@ -223,23 +223,36 @@ def test_defaults_args(channel_name, channel_description, channel_author, zim_na
     assert set(scraper.tags) == {"_category:other", "kolibri", "_videos:yes"}
     assert len(scraper.tags) == 3
 
-def test_language_cli_override(channel_name, channel_description, channel_author, zim_name):
+
+def test_language_cli_override(
+    channel_name, channel_description, channel_author, zim_name
+):
     args = parse_args(["--name", zim_name, "--lang", "fra"])
     scraper = Kolibri2Zim(**dict(args._get_kwargs()))
-    scraper.db = FakeDb(channel_name, channel_description, channel_author, channel_language="eng")
+    scraper.db = FakeDb(
+        channel_name, channel_description, channel_author, channel_language="eng"
+    )
     scraper.sanitize_inputs()
     assert scraper.language == "fra"
 
-def test_language_from_channel(channel_name, channel_description, channel_author, zim_name):
+
+def test_language_from_channel(
+    channel_name, channel_description, channel_author, zim_name
+):
     args = parse_args(["--name", zim_name])
     scraper = Kolibri2Zim(**dict(args._get_kwargs()))
-    scraper.db = FakeDb(channel_name, channel_description, channel_author, channel_language="fra")
+    scraper.db = FakeDb(
+        channel_name, channel_description, channel_author, channel_language="fra"
+    )
     scraper.sanitize_inputs()
     assert scraper.language == "fra"
+
 
 def test_language_fallback(channel_name, channel_description, channel_author, zim_name):
     args = parse_args(["--name", zim_name])
     scraper = Kolibri2Zim(**dict(args._get_kwargs()))
-    scraper.db = FakeDb(channel_name, channel_description, channel_author, channel_language=None)
+    scraper.db = FakeDb(
+        channel_name, channel_description, channel_author, channel_language=None
+    )
     scraper.sanitize_inputs()
     assert scraper.language == "eng"

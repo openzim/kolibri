@@ -42,8 +42,8 @@ def parse_args(raw_args):
     parser.add_argument(
         "--lang",
         help="ISO 639-3 code to override the channel's language metadata in ZIM. "
-             "Uses channel language if not provided.",
-        default=None,  
+        "Uses channel language if not provided.",
+        default=None,
     )
 
     parser.add_argument(

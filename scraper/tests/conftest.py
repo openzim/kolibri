@@ -25,8 +25,9 @@ class FakeDb(KolibriDB):
             "name": self.channel_name,
             "description": self.channel_description,
             "author": self.channel_author,
-            "language": self.channel_language,  
+            "language": self.channel_language,
         }
+
 
 @pytest.fixture()
 def channel_name() -> Generator[str, None, None]:

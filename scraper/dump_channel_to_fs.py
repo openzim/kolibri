@@ -2,20 +2,20 @@
 # vim: ai ts=4 sts=4 et sw=4 nu
 
 
-""" dump a channel content into a folder
+"""dump a channel content into a folder
 
-    Using a channel_id, download all files it is consisted of and store them in a local
-    folder mimicing the studio URLs.
+Using a channel_id, download all files it is consisted of and store them in a local
+folder mimicing the studio URLs.
 
-    This allows running kolibri2zim off a local *mirror* of the actual Kolibri Studio
-    this saving a lot of bandwidth/time during dev and saving those resources
-    on kolibri side as well.
+This allows running kolibri2zim off a local *mirror* of the actual Kolibri Studio
+this saving a lot of bandwidth/time during dev and saving those resources
+on kolibri side as well.
 
-    Just serve build folder via webserver and change STUDIO_URL env for kolibri2zim
-    caddy file-server -browse -listen 0.0.0.0:8888 -root build
-    STUDIO_URL=http://localhost:8888 kolibri2zim --channel_id xxx
+Just serve build folder via webserver and change STUDIO_URL env for kolibri2zim
+caddy file-server -browse -listen 0.0.0.0:8888 -root build
+STUDIO_URL=http://localhost:8888 kolibri2zim --channel_id xxx
 
-    Uses wget for downloads """
+Uses wget for downloads"""
 
 import contextlib
 import logging
