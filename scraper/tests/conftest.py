@@ -13,18 +13,20 @@ class FakeDb(KolibriDB):
         channel_name: str,
         channel_description: str,
         channel_author: str | None,
+        channel_language: str = "eng",  # Added parameter with default value
     ):
         self.channel_name = channel_name
         self.channel_description = channel_description
         self.channel_author = channel_author
+        self.channel_language = channel_language  # Store the language
 
     def get_channel_metadata(self, channel_id):  # noqa: ARG002
         return {
             "name": self.channel_name,
             "description": self.channel_description,
             "author": self.channel_author,
+            "language": self.channel_language,  
         }
-
 
 @pytest.fixture()
 def channel_name() -> Generator[str, None, None]:

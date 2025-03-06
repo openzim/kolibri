@@ -222,3 +222,28 @@ def test_defaults_args(channel_name, channel_description, channel_author, zim_na
     # We compare sets because ordering does not matter
     assert set(scraper.tags) == {"_category:other", "kolibri", "_videos:yes"}
     assert len(scraper.tags) == 3
+
+def test_language_handling(channel_name, channel_description, channel_author, zim_name):
+    # Test case 1: CLI language overrides channel language
+    args = parse_args(["--name", zim_name, "--lang", "fra"])
+    scraper = Kolibri2Zim(**dict(args._get_kwargs()))
+    scraper.db = FakeDb(
+        channel_name=channel_name,
+        channel_description=channel_description,
+        channel_author=channel_author,
+        channel_language="eng",  # Channel language is "eng"
+    )
+    scraper.sanitize_inputs()
+    assert scraper.language == "fra"  # CLI language should override
+
+    # Test case 2: No CLI language, use channel language
+    args = parse_args(["--name", zim_name])
+    scraper = Kolibri2Zim(**dict(args._get_kwargs()))
+    scraper.db = FakeDb(
+        channel_name=channel_name,
+        channel_description=channel_description,
+        channel_author=channel_author,
+        channel_language="fra",  # Channel language is "fra"
+    )
+    scraper.sanitize_inputs()
+    assert scraper.language == "fra"  # When not provided by CLI, use channel language

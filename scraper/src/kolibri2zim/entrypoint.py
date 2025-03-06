@@ -39,11 +39,12 @@ def parse_args(raw_args):
         required=True,
     )
 
+    # Change from default "eng" to None and adjust help text
     parser.add_argument(
         "--lang",
-        help="ZIM Language, used in metadata (should be a ISO-639-3 language code). "
-        "If unspecified, scraper will use 'eng'",
-        default="eng",
+        help="ISO 639-3 code to override the channel's language metadata in ZIM. "
+             "Uses channel language if not provided.",
+        default=None,  # Remove hardcoded default
     )
 
     parser.add_argument(
