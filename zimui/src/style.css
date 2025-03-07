@@ -1,0 +1,19 @@
+.container,
+.container-fluid,
+.container-lg,
+.container-md,
+.container-sm,
+.container-xl {
+  width: 100%;
+  padding-right: 76px;
+  padding-left: 76px;
+  margin-right: auto;
+  margin-left: auto;
+}
+.tooltip {
+  opacity: 1;
+}
+.tooltip .tooltip-inner {
+  background-color: white;
+  color: black;
+}

@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block head %}
+<link href="../assets/videojs/video-js.css" rel="stylesheet" />
+<style type="text/css">
+  .no-thumbnail {
+      height: 3em;
+  }
+  .video-js-audio .vjs-big-play-button {
+      font-size: 24px;
+      line-height: 26px;
+      height: 100%;
+      width: 100%;
+      top: 0;
+      left: 0;
+      border-radius: unset;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+{% include "node_meta.html" %}
+
+<audio
+    class="video-js vjs-default-skin video-js-audio {% if not thumbnail %}no-thumbnail{% endif %}"
+    {% if thumbnail %}poster="{{ thumbnail }}"{% endif %}
+    data-setup='{"techOrder": ["html5", "ogvjs"], "ogvjs": {"base": "assets/ogvjs"}, "autoplay": {% if autoplay %}true{% else %}false{% endif %}, "preload": true, "controls": true, "controlBar": {"pictureInPictureToggle":false}}'>
+    <source src="../{{ filename }}" type="audio/{{ ext }}" />
+</audio>
+{% endblock %}
+
+{% block script %}
+<script src="../assets/videojs/video.js"></script>
+<script src="../assets/ogvjs/ogv-support.js"></script>
+<script src="../assets/ogvjs/ogv.js"></script>
+<script src="../assets/videojs-ogvjs.js"></script>
+{% endblock %}
