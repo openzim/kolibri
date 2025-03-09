@@ -12,6 +12,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Updated the error display to a modern UI. (#131)
 
+### Added
+- Language metadata can be customized via `--lang` CLI parameter (#41).
+
+### Changed
+- Default language is now sourced from channel metadata if available, otherwise falls back to `eng`.
+- Added validation for ISO 639-3 language codes.
+
 ## [1.2.1] - 2024-02-29
 
 ### Changed

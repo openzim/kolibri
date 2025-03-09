@@ -1087,6 +1087,12 @@ class Kolibri2Zim:
     def sanitize_inputs(self):
         channel_meta = self.db.get_channel_metadata(self.channel_id)
 
+        self.language = self.language or channel_meta.get("language") or "eng"
+
+        if len(self.language) != 3:
+            logger.warning(f"Ignoring invalid language code: {self.language}")
+            self.language = "eng"
+
         # input  & metadata sanitation
         period = datetime.date.today().strftime("%Y-%m")
         if self.fname:
