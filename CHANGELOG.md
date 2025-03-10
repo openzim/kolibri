@@ -10,6 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Enhance contribution guidelines: Refactored shell scripts, added additional steps. (#91)
 
 ### Changed
+- Upgrade to ESLint 9 and fix linting issues #137
+
+### Changed
+- Align Vue.js configuration with latest changes #135
+
+### Changed
 - Updated the error display to a modern UI. (#131)
 
 ## [1.2.1] - 2024-02-29

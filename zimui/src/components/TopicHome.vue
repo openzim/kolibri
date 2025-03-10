@@ -38,6 +38,7 @@ const fetchData = async function () {
       topic.value = resp
     }
   } catch (error) {
+    console.error(error)
     main.setErrorMessage('An unexpected error occured.')
   } finally {
     loader.hide()
@@ -47,8 +48,8 @@ const fetchData = async function () {
 
 watch(props, fetchData)
 
-onMounted(() => {
-  fetchData()
+onMounted(async () => {
+  await fetchData()
 })
 
 /** Return sections whose kind is 'topic' */
