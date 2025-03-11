@@ -64,14 +64,14 @@ const getMaxTags = function () {
 
 /** Retrieve all or less tags*/
 const showMoreOrLess = function () {
-  showMore.value
-    ? getMaxTags()
-    : (tags.value = props.sections.map((content) => {
-        return {
-          title: content.title,
-          slug: content.slug,
-        }
-      }))
+  if (showMore.value) {
+    getMaxTags()
+  } else {
+    tags.value = props.sections.map((content) => ({
+      title: content.title,
+      slug: content.slug,
+    }))
+  }
   showMore.value = !showMore.value
 }
 
