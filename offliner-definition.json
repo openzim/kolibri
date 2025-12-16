@@ -56,13 +56,15 @@
       "maxLength": 4000
     },
     "favicon": {
-      "type": "url",
+      "type": "blob",
+      "kind": "image",
       "required": false,
       "title": "Favicon",
       "description": "Custom Favicon for your ZIM. Kolibri channel thumbnail otherwise"
     },
     "css": {
-      "type": "url",
+      "type": "blob",
+      "kind": "css",
       "required": false,
       "title": "Custom CSS",
       "description": "URL to a single CSS file to be included in all pages (but not on kolibri-html-content ones). Inlude external resources using data URL."
