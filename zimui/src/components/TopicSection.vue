@@ -8,8 +8,8 @@ import { transformTopicSectionOrSubSectionToCardData } from '@/types/TopicCardDa
 defineProps({
   data: {
     type: Object,
-    required: true,
-  },
+    required: true
+  }
 })
 const instance = getCurrentInstance()
 const uid = ref('carroussel_' + instance?.uid)
@@ -42,7 +42,7 @@ function updateCurrentSlide() {
  */
 const limitCardsPerSections = (
   subsections: TopicSubSection[],
-  sectionSlug: string,
+  sectionSlug: string
 ): TopicCardData[] => {
   const maxCardPerSection = 10
 
@@ -53,7 +53,7 @@ const limitCardsPerSections = (
     slicedInput.push({
       kind: 'more',
       count_more: subsections.length - maxCardPerSection,
-      slug: sectionSlug,
+      slug: sectionSlug
     } as TopicCardData)
     return slicedInput
   }
@@ -68,21 +68,15 @@ const limitCardsPerSections = (
  */
 const splitCardsListIntoChunks = (
   cards: TopicCardData[],
-  cardsPerChunk: number,
+  cardsPerChunk: number
 ): TopicCardData[][] => {
   return cards.reduce(
-    (
-      cardsByChunks: TopicCardData[][],
-      oneCard: TopicCardData,
-      cardIndex: number,
-    ) => {
+    (cardsByChunks: TopicCardData[][], oneCard: TopicCardData, cardIndex: number) => {
       const chunkIndex = Math.floor(cardIndex / cardsPerChunk)
-      cardsByChunks[chunkIndex] = (cardsByChunks[chunkIndex] || []).concat(
-        oneCard,
-      )
+      cardsByChunks[chunkIndex] = (cardsByChunks[chunkIndex] || []).concat(oneCard)
       return cardsByChunks
     },
-    [],
+    []
   )
 }
 
@@ -98,18 +92,12 @@ const getClassSelector = (className: string): string => {
 <template>
   <div class="subsection container pt-3 pb-3">
     <div class="container pt-3">
-      <router-link
-        class="text-decoration-none text-reset"
-        :to="`./${data.slug}`"
-      >
+      <router-link class="text-decoration-none text-reset" :to="`./${data.slug}`">
         <h4 :class="{ 'mb-2': data.description, 'mb-4': !data.description }">
           <span>
             {{ data.title }}
             <span class="right-arrow">
-              <FontAwesomeIcon
-                aria-label="Arrow Right icon"
-                icon="fa-solid fa-arrow-right"
-              />
+              <FontAwesomeIcon aria-label="Arrow Right icon" icon="fa-solid fa-arrow-right" />
             </span>
           </span>
         </h4>
@@ -122,13 +110,13 @@ const getClassSelector = (className: string): string => {
     </div>
     <div :id="uid" class="carousel slide subsection-carousel-container" data-bs-wrap="false">
       <button
-        v-if="data.subsections.length >= ($grid.lg ? 4 : $grid.sm ? 2 : 1) && currentSlide!==0"
+        v-if="data.subsections.length >= ($grid.lg ? 4 : $grid.sm ? 2 : 1) && currentSlide !== 0"
         class="carousel-control-prev"
         type="button"
         :data-bs-target="getClassSelector(uid)"
         data-bs-slide="prev"
       >
-        <span style="color: black;">
+        <span style="color: black">
           <font-awesome-icon :icon="['fas', 'arrow-left']" />
         </span>
         <span class="visually-hidden">Previous</span>
@@ -138,13 +126,13 @@ const getClassSelector = (className: string): string => {
           <div
             v-for="(chunk, chunkIndex) in splitCardsListIntoChunks(
               limitCardsPerSections(data.subsections, data.slug),
-              $grid.lg ? 4 : $grid.sm ? 2 : 1,
+              $grid.lg ? 4 : $grid.sm ? 2 : 1
             )"
             :key="chunkIndex"
             class="carousel-item"
             :class="{ active: chunkIndex === currentSlide }"
             :data-index="chunkIndex"
-            style="padding: 0px 10px;"
+            style="padding: 0px 10px"
           >
             <div>
               <div class="row">
@@ -161,18 +149,26 @@ const getClassSelector = (className: string): string => {
         </div>
       </div>
       <button
-        v-if="data.subsections.length >= ($grid.lg ? 4 : $grid.sm ? 2 : 1) && currentSlide!==splitCardsListIntoChunks(limitCardsPerSections(data.subsections, data.slug), $grid.lg ? 4 : $grid.sm ? 2 : 1).length-1"
+        v-if="
+          data.subsections.length >= ($grid.lg ? 4 : $grid.sm ? 2 : 1) &&
+          currentSlide !==
+            splitCardsListIntoChunks(
+              limitCardsPerSections(data.subsections, data.slug),
+              $grid.lg ? 4 : $grid.sm ? 2 : 1
+            ).length -
+              1
+        "
         class="carousel-control-next"
         type="button"
         :data-bs-target="getClassSelector(uid)"
         data-bs-slide="next"
       >
-        <span style="color: black;">
+        <span style="color: black">
           <font-awesome-icon :icon="['fas', 'arrow-right']" />
         </span>
         <span class="visually-hidden">Next</span>
       </button>
-	  </div>
+    </div>
   </div>
 </template>
 
@@ -195,7 +191,7 @@ const getClassSelector = (className: string): string => {
   position: relative;
 }
 
-.subsection{
+.subsection {
   padding-left: 0px;
   padding-right: 0px;
 }

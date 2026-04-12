@@ -8,8 +8,10 @@
     "build": "vue-tsc && vite build",
     "preview": "vite preview",
     "test": "vitest",
-    "lint": "eslint --ext .js,.ts,.vue ./src",
-    "format": "prettier . --write"
+    "lint": "eslint --ext .js,.ts,.vue ./src --fix",
+    "lint-check": "eslint --ext .js,.ts,.vue ./src",
+    "format": "prettier . --write",
+    "format-check": "prettier . --check"
   },
   "dependencies": {
     "@codemirror/lang-javascript": "^6.1.6",

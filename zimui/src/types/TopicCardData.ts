@@ -14,13 +14,13 @@ export default interface TopicCardData {
 }
 
 export function transformTopicSectionOrSubSectionToCardData(
-  value: TopicSection | TopicSubSection,
+  value: TopicSection | TopicSubSection
 ): TopicCardData {
   return {
     slug: value.slug,
     title: value.title,
     description: value.description,
     kind: value.kind,
-    thumbnail: value.thumbnail,
+    thumbnail: value.thumbnail
   } as TopicCardData
 }

@@ -22,7 +22,7 @@ export default defineConfigWithVueTs(
       'coverage/**',
       '*.config.js',
       '*.config.ts',
-      '.eslintrc.js',
+      '.eslintrc.js'
     ]
   }
 )

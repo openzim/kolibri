@@ -27,7 +27,7 @@ const router = createRouter({
   routes: routes,
   scrollBehavior() {
     return { top: 0, behavior: 'smooth' }
-  },
+  }
 })
 
 app.use(router)

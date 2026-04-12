@@ -15,8 +15,8 @@ export const useMainStore = defineStore('main', {
       channelData: null,
       isLoading: false,
       errorMessage: '',
-      errorDetails: '',
-    }) as RootState,
+      errorDetails: ''
+    } as RootState),
   getters: {},
   actions: {
     async fetchChannel() {
@@ -36,7 +36,7 @@ export const useMainStore = defineStore('main', {
           if (error instanceof AxiosError) {
             this.handleAxiosError(error)
           }
-        },
+        }
       )
     },
     async fetchTopic(slug: string) {
@@ -78,6 +78,6 @@ export const useMainStore = defineStore('main', {
     },
     setErrorMessage(message: string) {
       this.errorMessage = message
-    },
-  },
+    }
+  }
 })

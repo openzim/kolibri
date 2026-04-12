@@ -8,8 +8,8 @@ const image = ref(imageData)
 defineProps({
   data: {
     type: Object as PropType<TopicCardData>,
-    required: true,
-  },
+    required: true
+  }
 })
 </script>
 
@@ -19,9 +19,7 @@ defineProps({
       <div class="card-body">
         <div class="card-content">
           <h5 class="card-title">More items ...</h5>
-          <p class="card-text">
-            There are {{ data.count_more }} more items in this section.
-          </p>
+          <p class="card-text">There are {{ data.count_more }} more items in this section.</p>
         </div>
         <p class="card-text badge-wrapper">
           <span class="badge rounded-pill badge-primary">
@@ -35,22 +33,14 @@ defineProps({
 
   <div v-else-if="data.kind == 'topic'" class="card">
     <router-link class="text-decoration-none text-reset" :to="`./${data.slug}`">
-      <img
-        v-if="data.thumbnail"
-        class="card-img-top"
-        :src="`./thumbnails/${data.thumbnail}`"
-      />
+      <img v-if="data.thumbnail" class="card-img-top" :src="`./thumbnails/${data.thumbnail}`" />
       <img v-else class="card-img-top" :src="image" />
       <div class="card-body" :class="{ 'with-description': data.description }">
         <div class="card-content">
           <h5 class="card-title">
             <span :title="data.title">{{ data.title }}</span>
           </h5>
-          <span
-            v-if="data.description"
-            class="card-text"
-            :title="data.description"
-          >
+          <span v-if="data.description" class="card-text" :title="data.description">
             {{ data.description }}
           </span>
         </div>
@@ -66,22 +56,14 @@ defineProps({
 
   <div v-else class="card">
     <a class="text-decoration-none text-reset" :href="`./files/${data.slug}/`">
-      <img
-        v-if="data.thumbnail"
-        class="card-img-top"
-        :src="`./thumbnails/${data.thumbnail}`"
-      />
+      <img v-if="data.thumbnail" class="card-img-top" :src="`./thumbnails/${data.thumbnail}`" />
       <img v-else class="card-img-top" :src="image" />
       <div class="card-body" :class="{ 'with-description': data.description }">
         <div class="card-content">
           <h5 class="card-title">
             <span :title="data.title">{{ data.title }}</span>
           </h5>
-          <span
-            v-if="data.description"
-            class="card-text"
-            :title="data.description"
-          >
+          <span v-if="data.description" class="card-text" :title="data.description">
             {{ data.description }}
           </span>
         </div>

@@ -4,18 +4,16 @@ import { Tooltip } from 'bootstrap'
 defineProps({
   data: {
     type: Object,
-    required: true,
-  },
+    required: true
+  }
 })
 
 onMounted(() => {
   //initialize tooltip
-  const tooltipTriggerList = document.querySelectorAll(
-    '[data-toggle="tooltip"]',
-  )
+  const tooltipTriggerList = document.querySelectorAll('[data-toggle="tooltip"]')
   tooltipTriggerList.forEach(function (tooltipTriggerEl) {
     const tooltip = new Tooltip(tooltipTriggerEl, {
-      trigger: 'hover',
+      trigger: 'hover'
     })
     tooltipTriggerEl.addEventListener('click', () => {
       tooltip.dispose()
