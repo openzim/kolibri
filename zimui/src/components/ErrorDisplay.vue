@@ -22,7 +22,6 @@ const errimage = ref(errimageData)
 </template>
 
 <style scoped>
-
 .error-page {
   max-width: 1200px;
   margin: 0 auto;
@@ -72,12 +71,12 @@ const errimage = ref(errimageData)
     flex-direction: column;
     text-align: center;
   }
-  
+
   .error-text {
     margin: 20px auto;
     font-size: 16px;
   }
-  
+
   .error-image {
     width: 300px;
   }

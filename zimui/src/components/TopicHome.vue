@@ -14,8 +14,8 @@ const main = useMainStore()
 const props = defineProps({
   slug: {
     type: String,
-    default: undefined,
-  },
+    default: undefined
+  }
 })
 
 const topic = ref<Topic>()
@@ -25,7 +25,7 @@ const $loading = useLoading()
 /** Retrieve topic data */
 const fetchData = async function () {
   const loader = $loading.show({
-    loader: 'dots',
+    loader: 'dots'
   })
   dataLoaded.value = false
   if (props.slug == undefined) {
@@ -58,26 +58,19 @@ const getTopicSections = (topics: TopicSectionType[]): TopicSectionType[] => {
 }
 
 /** Return sections whose kind is not 'topic' */
-const getNonTopicSections = (
-  topics: TopicSectionType[],
-): TopicSectionType[] => {
+const getNonTopicSections = (topics: TopicSectionType[]): TopicSectionType[] => {
   return topics.filter((section) => section.kind != 'topic')
 }
 
 /** Return true if section has a mix of topic and non-topic sectionss */
 const hasTopicAndNonTopicSection = (topics: TopicSectionType[]): boolean => {
-  return (
-    getTopicSections(topics).length > 0 &&
-    getNonTopicSections(topics).length > 0
-  )
+  return getTopicSections(topics).length > 0 && getNonTopicSections(topics).length > 0
 }
 
 /** Return true if node has at least on parent */
 const hasParents = (): boolean => {
   return (
-    topic.value != undefined &&
-    topic.value.parents != undefined &&
-    topic.value.parents.length > 0
+    topic.value != undefined && topic.value.parents != undefined && topic.value.parents.length > 0
   )
 }
 
@@ -92,9 +85,7 @@ const goToPreviousPage = () => {
 
 <template>
   <div v-if="topic" class="content">
-    <nav
-      class="navbar navbar px-0 channel-navbar navbar-light fixed-top navbar-expand shadow"
-    >
+    <nav class="navbar navbar px-0 channel-navbar navbar-light fixed-top navbar-expand shadow">
       <div class="justify-content-start mx-3 container-fluid">
         <ul aria-label="breadcrumb" class="navbar-nav">
           <ol class="bg-transparent breadcrumb flex-nowrap px-2 mt-3">
@@ -106,42 +97,29 @@ const goToPreviousPage = () => {
               ...
             </li>
             <li
-              v-for="(parent, parentIndex) in topic.parents.slice(
-                $grid.md ? -2 : -1,
-              )"
+              v-for="(parent, parentIndex) in topic.parents.slice($grid.md ? -2 : -1)"
               :key="parentIndex"
               :data="parent"
               class="breadcrumb-item text-truncate"
               :title="parent.title"
             >
-              <router-link :to="`./${parent.slug}`">{{
-                parent.title
-              }}</router-link>
+              <router-link :to="`./${parent.slug}`">{{ parent.title }}</router-link>
             </li>
-            <li
-              class="active breadcrumb-item text-truncate"
-              :title="topic.title"
-            >
+            <li class="active breadcrumb-item text-truncate" :title="topic.title">
               {{ topic.title }}
             </li>
           </ol>
         </ul>
       </div>
     </nav>
-    <div
-      v-if="dataLoaded"
-      class="jumbotron"
-      :class="{ 'with-description': topic.description }"
-    >
+    <div v-if="dataLoaded" class="jumbotron" :class="{ 'with-description': topic.description }">
       <div class="container">
-        <div
-          class="align-items-start d-flex justify-content-between mt-5"
-        ></div>
+        <div class="align-items-start d-flex justify-content-between mt-5"></div>
         <div class="row">
           <div
             :class="{
               'col-sm-8': topic.thumbnail,
-              'col-sm-12': !topic.thumbnail,
+              'col-sm-12': !topic.thumbnail
             }"
           >
             <button
@@ -150,10 +128,7 @@ const goToPreviousPage = () => {
               class="btn back-button rounded-circle btn-secondary light"
               @click="goToPreviousPage"
             >
-              <FontAwesomeIcon
-                aria-label="Arrow Left icon"
-                icon="fa-solid fa-arrow-left"
-              />
+              <FontAwesomeIcon aria-label="Arrow Left icon" icon="fa-solid fa-arrow-left" />
             </button>
             <h1 class="d-md-none h3">{{ topic.title }}</h1>
             <h1 class="d-md-block d-none">{{ topic.title }}</h1>
@@ -196,10 +171,7 @@ const goToPreviousPage = () => {
           :key="contentIndex"
           class="col-sm-6 col-md-6 col-lg-3 mt-5"
         >
-          <TopicCard
-            :data="transformTopicSectionOrSubSectionToCardData(content)"
-            class="w-100"
-          />
+          <TopicCard :data="transformTopicSectionOrSubSectionToCardData(content)" class="w-100" />
         </div>
       </div>
       <div class="row">
@@ -230,11 +202,8 @@ const goToPreviousPage = () => {
 .navbar {
   background-color: #12272a;
   height: 3.5rem;
-  transition:
-    color 0.15s ease-in-out,
-    background-color 0.15s ease-in-out,
-    border-color 0.15s ease-in-out,
-    box-shadow 0.15s ease-in-out;
+  transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out,
+    border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
 }
 
 .breadcrumb-item a {

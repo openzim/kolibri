@@ -6,8 +6,8 @@ import TagButton from '../components/TagButton.vue'
 const props = defineProps({
   sections: {
     type: Object as PropType<TopicSectionType[]>,
-    required: true,
-  },
+    required: true
+  }
 })
 
 const tags = ref<
@@ -32,10 +32,7 @@ const showMore = ref(false)
  */
 const lengthOfTags = function () {
   const containerWidth = document.querySelector('.container')?.clientWidth
-  const totalCharacters = props.sections.reduce(
-    (acc, content) => acc + content.title.length,
-    0,
-  )
+  const totalCharacters = props.sections.reduce((acc, content) => acc + content.title.length, 0)
   const maxCharacters = containerWidth ? containerWidth / 7 : 150
 
   let tagsToDisplay = props.sections.length
@@ -57,7 +54,7 @@ const getMaxTags = function () {
   tags.value = props.sections.slice(0, lengthOfTags()).map((content) => {
     return {
       title: content.title,
-      slug: content.slug,
+      slug: content.slug
     }
   })
 }
@@ -69,7 +66,7 @@ const showMoreOrLess = function () {
   } else {
     tags.value = props.sections.map((content) => ({
       title: content.title,
-      slug: content.slug,
+      slug: content.slug
     }))
   }
   showMore.value = !showMore.value
@@ -90,11 +87,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div
-    style="align-items: baseline"
-    class="mt-2 container btn-toolbar toolbar"
-    role="toolbar"
-  >
+  <div style="align-items: baseline" class="mt-2 container btn-toolbar toolbar" role="toolbar">
     <TagButton v-for="content in tags" :key="content.slug" :data="content" />
     <div v-if="lengthOfTags() < sections.length">
       <button
