@@ -20,8 +20,8 @@
       "required": false,
       "title": "Language",
       "description": "ISO-639-3 (3 chars) language code of content. If unspecified, will attempt to detect from main page, or use 'eng'",
-      "minLength": 3,
-      "maxLength": 3,
+      "minGraphemes": 3,
+      "maxGraphemes": 3,
       "customValidator": "language_code"
     },
     "name": {
@@ -36,24 +36,24 @@
       "required": false,
       "title": "Title",
       "description": "Custom title for your ZIM. Kolibri channel name otherwise",
-      "minLength": 1,
-      "maxLength": 30
+      "minGraphemes": 1,
+      "maxGraphemes": 30
     },
     "description": {
       "type": "string",
       "required": false,
       "title": "Description",
       "description": "Custom description for your ZIM. Kolibri channel description otherwise",
-      "minLength": 1,
-      "maxLength": 80
+      "minGraphemes": 1,
+      "maxGraphemes": 80
     },
     "long_description": {
       "type": "string",
       "required": false,
       "title": "Long description",
       "description": "Custom long description for your ZIM. Kolibri channel description otherwise",
-      "minLength": 1,
-      "maxLength": 4000
+      "minGraphemes": 1,
+      "maxGraphemes": 4000
     },
     "favicon": {
       "type": "blob",
